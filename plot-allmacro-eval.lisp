@@ -16,6 +16,7 @@ exec ros -Q -- $0 "$@"
 (defun main (&rest args)
   (declare (ignorable args))
   (my-connect "db.sqlite")
+  (ensure-directories-exist "eval/")
   (iter (for (_ config) in
              (retrieve-by-sql
               (select :configuration
@@ -29,7 +30,7 @@ exec ros -Q -- $0 "$@"
                                 :font "Times New Roman, 12")
                     :size :square
                     :view '(:equal :xy)
-                    :output #?"fig2-eval-${config}.pdf"
+                    :output #?"eval/fig2-eval-${config}.pdf"
                     :pointsize 0.45
                     :logscale :xy
                     :format '(xy "10^%T")
