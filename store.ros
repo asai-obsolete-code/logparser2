@@ -4,7 +4,7 @@
 exec ros -Q -- $0 "$@"
 |#
 
-;;;; 
+;;;;
 
 (load "common.lisp")
 (in-package :ros.script.plot)
@@ -173,7 +173,7 @@ exec ros -Q -- $0 "$@"
 
 (defun main (&rest files)
   ;; (sb-profile:profile #.(package-name *package*))
-  (connect "db.sqlite")
+  (my-connect "db.sqlite")
   (ensure-table-exists 'fig2)
   (ensure-table-exists 'fig3)
   ;; (mito:migrate-table 'fig2)

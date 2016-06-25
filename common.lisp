@@ -1,8 +1,10 @@
 (ql:register-local-projects)
-(ql:quickload '(:eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lisp-namespace :lparallel))
+(ql:quickload '(:eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lisp-namespace :lparallel
+                :cl-syntax-interpol))
 
 (defpackage :ros.script.plot
-  (:use :cl :eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lparallel))
+  (:use :cl :eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lparallel :sxql :dbi
+        :cl-interpol))
 
 (in-package :ros.script.plot)
 
@@ -43,6 +45,6 @@
       (seed :col-type :integer :initarg :seed))
   (:metaclass dao-table-class))
 
-(defun connect (name)
+(defun my-connect (name)
   (declare (ignorable name))
   (connect-toplevel :sqlite3 :database-name name))
