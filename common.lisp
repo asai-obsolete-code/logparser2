@@ -1,3 +1,4 @@
+(ql:register-local-projects)
 (ql:quickload '(:eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lisp-namespace :lparallel))
 
 (defpackage :ros.script.plot

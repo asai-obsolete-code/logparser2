@@ -179,11 +179,16 @@ exec ros -Q -- $0 "$@"
   ;; (mito:migrate-table 'fig2)
   ;; (mito:migrate-table 'fig3)
   (setf *kernel* (make-kernel 4))
-  (map nil #'save-dao
-        (pmapcar (lambda (file)
-                   (call-with-error-decoration
-                    (format nil "~&while parsing metadata for ~a:" file)
-                    (lambda () (parse (pathname file)))))
-                 files))
-  ;; (sb-profile:report)
-  )
+  (mito.logger:with-sql-logging
+    (execute-sql
+     (sxql:pragma "synchronous" 0))
+    (execute-sql
+     (sxql:pragma "journal_mode" "persist")))
+  (progn
+    (dbi:with-transaction *connection*
+      (map nil #'save-dao
+           (pmapcar (lambda (file)
+                      (call-with-error-decoration
+                       (format nil "~&while parsing metadata for ~a:" file)
+                       (lambda () (parse (pathname file)))))
+                    files)))))
