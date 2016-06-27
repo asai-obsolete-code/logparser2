@@ -50,8 +50,11 @@ exec ros -Q -- $0 "$@"
     ((ppcre "Expanded ([0-9]*) state" (read num))
      num)
     ((ppcre "(?:PROBE|BFS)_Expanded=([0-9]*)" (read num))
-     (incf (local :expansion 0) num)
-     nil)))
+     (incf (local :expansion 0) num) ;; take the sum
+     nil)
+    ;; mp: num decisions
+    ((ppcre "SAT \\(([0-9]*) decisions (?:[0-9]*) conflicts\\)" (read decisions))
+     decisions)))
 
 (defparser evaluation (line)
   (match line
@@ -59,6 +62,9 @@ exec ros -Q -- $0 "$@"
      num)
     ((ppcre "(?:PROBE|BFS)_Evaluated=([0-9]*)" (read num))
      (incf (local :evaluation 0) num)
+     nil)
+    ((ppcre "Horizon (?:[0-9]*): ([0-9]*) variables" (read num))
+     (maxf (local :evaluation 0) num)
      nil)))
 
 (defparser search (line)
@@ -66,6 +72,8 @@ exec ros -Q -- $0 "$@"
     ((ppcre "Actual search time: ([.0-9]*) " (read num))
      num)
     ((ppcre "Time: ([.0-9]*)" (read num))
+     num)
+    ((ppcre "total time ([.0-9]*)" (read num))
      num)))
 
 (defparser generation (line)
@@ -78,6 +86,8 @@ exec ros -Q -- $0 "$@"
     ((ppcre "Plan length: ([0-9]*) step" (read n))
      n)
     ((ppcre "Plan cost: (?:[.0-9]*), steps: ([0-9]*)" (read num))
+     num)
+    ((ppcre "([0-9]*) actions in the plan." (read num))
      num)))
 
 (defparser plan-cost (line)
@@ -121,9 +131,13 @@ exec ros -Q -- $0 "$@"
      nil)))
 
 (defparser memory (line)
+  "in kB"
   (match line
     ((ppcre "MAXMEM_RSS (-?[0-9]*)" (read mem))
      (maxf (local :memory -1) mem)
+     nil)
+    ((ppcre "total size ([.0-9]*) MB" (read mem))
+     (maxf (local :memory -1) (floor (* 1000 mem)))
      nil)))
 
 ;;;; main
