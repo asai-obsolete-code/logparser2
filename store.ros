@@ -48,16 +48,24 @@ exec ros -Q -- $0 "$@"
 (defparser expansion (line)
   (match line
     ((ppcre "Expanded ([0-9]*) state" (read num))
-     num)))
+     num)
+    ((ppcre "(?:PROBE|BFS)_Expanded=([0-9]*)" (read num))
+     (incf (local :expansion 0) num)
+     nil)))
 
 (defparser evaluation (line)
   (match line
     ((ppcre "Evaluated ([0-9]*) state" (read num))
-     num)))
+     num)
+    ((ppcre "(?:PROBE|BFS)_Evaluated=([0-9]*)" (read num))
+     (incf (local :evaluation 0) num)
+     nil)))
 
 (defparser search (line)
   (match line
     ((ppcre "Actual search time: ([.0-9]*) " (read num))
+     num)
+    ((ppcre "Time: ([.0-9]*)" (read num))
      num)))
 
 (defparser generation (line)
@@ -68,12 +76,18 @@ exec ros -Q -- $0 "$@"
 (defparser plan-length (line)
   (match line
     ((ppcre "Plan length: ([0-9]*) step" (read n))
-     n)))
+     n)
+    ((ppcre "Plan cost: (?:[.0-9]*), steps: ([0-9]*)" (read num))
+     num)))
 
 (defparser plan-cost (line)
   (match line
     ((ppcre "Plan cost: *([0-9]*)" (read n))
-     n)))
+     n)
+    ;; limit.sh returns the plan length instead of cost, but we ignore it here
+    ;; ((ppcre "Plan cost: ([.0-9]*)" (read num))
+    ;;  (floor num))
+    ))
 
 #+nil
 (defparser seed (line)
