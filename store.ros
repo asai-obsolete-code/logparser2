@@ -73,6 +73,8 @@ exec ros -Q -- $0 "$@"
      num)
     ((ppcre "Time: ([.0-9]*)" (read num))
      num)
+    ((ppcre "Time: <1 msec")
+     0.001)
     ((ppcre "total time ([.0-9]*)" (read num))
      num)))
 
