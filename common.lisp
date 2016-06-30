@@ -16,7 +16,10 @@
    (domain :col-type :text :initarg :domain)
    (ipcyear :col-type :text :initarg :ipcyear)
    (ipctrack :col-type :text :initarg :ipctrack)
-   (configuration :col-type :text :initarg :configuration)
+   (algorithm :col-type :text :initarg :algorithm)
+   (heuristics :col-type :text :initarg :heuristics)
+   (default :col-type :text :initarg :default)
+   (queue :col-type :text :initarg :queue)
    ;;
    (search :col-type :float :initarg :search :initform -1)
    ;; (wall :col-type :float :initarg :wall :initform -1)
