@@ -176,21 +176,10 @@ exec ros -Q -- $0 "$@"
   `(list ,@(mappend (lambda (x) (list (make-keyword x) x)) args)))
 (defun parse-pathname (file)
   (ematch file
-    ((pathname :directory (last 3
-                                (split "-" "fig3" (read length) tag)
-                                (split* "-" ipcyear ipctrack _)
+    ((pathname :directory (last 2
+                                (split* "-" ipcyear ipctrack _ algorithm queue default-tie _)
                                 domain)
-               :name      (split* "\\." problem config+seednum _)
-               :type      "out")
-     (let* ((l (length config+seednum))
-            (configuration (subseq config+seednum 0 (1- l)))
-            (seed   (subseq config+seednum (1- l) l)))
-       (list* 'fig3 (initargs tag domain problem ipcyear ipctrack configuration length seed))))
-    ((pathname :directory (last 3
-                                (split "-" "fig2" tag)
-                                (split* "-" ipcyear ipctrack _)
-                                domain)
-               :name      (split* "\\." problem configuration _)
+               :name      (split* "\\." problem heuristics _)
                :type      "out")
      (list* 'fig2 (initargs tag domain problem ipcyear ipctrack configuration)))))
 
