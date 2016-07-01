@@ -10,10 +10,6 @@
 
 (setf *auto-migration-mode* t)
 
-;; (defclass mysym ()
-;;   ((name :col-type :text :initarg :name))
-;;   (:metaclass dao-table-class))
-
 (defclass db-symbol ()
   ((name :col-type :text :initarg :name))
   (:metaclass dao-table-class))
