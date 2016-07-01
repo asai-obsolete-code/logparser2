@@ -199,15 +199,10 @@
     (execute-sql
      (sxql:pragma "synchronous" 0))
     (execute-sql
-     (sxql:pragma "journal_mode" "persist"))
-  ;;   )
-  ;; (time
-   ;; progn
-    (let ((results (mapcar (lambda (file)
-                              (call-with-error-decoration
-                               (format nil "~&while parsing metadata for ~a:" file)
-                               (lambda () (parse (pathname file)))))
-                            files)))
-      ;; (dbi:with-transaction *connection*
-      ;;   (map nil #'save-dao results))
-      )))
+     (sxql:pragma "journal_mode" "persist")))
+  (time
+   (pmapcar (lambda (file)
+              (call-with-error-decoration
+               (format nil "~&while parsing metadata for ~a:" file)
+               (lambda () (parse (pathname file)))))
+            files)))
