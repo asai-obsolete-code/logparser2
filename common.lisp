@@ -10,6 +10,13 @@
 
 (setf *auto-migration-mode* t)
 
+(defun my-connect (&optional (name "db.sqlite"))
+  (declare (ignorable name))
+  (connect-toplevel :sqlite3 :database-name name))
+(defun reset (&optional (name "db.sqlite"))
+  (ignore-errors (disconnect *connection*))
+  (delete-file name))
+
 (defclass db-symbol ()
   ((name :col-type :text :initarg :name))
   (:metaclass dao-table-class))
@@ -69,6 +76,3 @@
       (seed :col-type :integer :initarg :seed))
   (:metaclass dao-table-class))
 
-(defun my-connect (name)
-  (declare (ignorable name))
-  (connect-toplevel :sqlite3 :database-name name))
