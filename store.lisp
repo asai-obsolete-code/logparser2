@@ -143,6 +143,7 @@
           (error "insert-dao returns nil!")))))
 
 (defun ensure-dao/write (name &rest args)
+  "runs the duplicate checking, but do not write the results"
   (or (values (apply #'find-dao name args) t)
       (values (apply #'make-instance name args) nil)
       (error "insert-dao returns nil!")))
