@@ -200,13 +200,9 @@ exec ros -Q -- $0 "$@"
     (funcall fn)))
 
 (defun main (&rest files)
-  (trace ensure-dao)
-  ;; (sb-profile:profile #.(package-name *package*))
   (my-connect "db.sqlite")
   (mapcar #'ensure-table-exists '(tag problem domain ipcyear ipctrack algorithm heuristics default queue
                                   fig2 fig3))
-  ;; (mito:migrate-table 'fig2)
-  ;; (mito:migrate-table 'fig3)
   (setf *kernel* (make-kernel 8))
   (mito.logger:with-sql-logging
     (execute-sql
