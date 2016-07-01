@@ -144,13 +144,14 @@ exec ros -Q -- $0 "$@"
 
 ;;;; main
 
-(defun make-instance* (name &rest args)
-  (or (apply #'find-dao name args)
-      (apply #'make-instance name args)))
+(defun ensure-dao (name &rest args)
+  (or (values (apply #'find-dao name args) t)
+      (values (apply #'create-dao name args) nil)
+      (error "insert-dao returns nil!")))
 
 (defun parse (file)
   (apply #'reinitialize-instance
-         (apply #'make-instance*
+         (apply #'ensure-dao
                 (parse-pathname file))
          (parse-output file)))
 
@@ -173,7 +174,12 @@ exec ros -Q -- $0 "$@"
             (hash-table-plist *local*))))
 
 (defmacro initargs (&rest args)
-  `(list ,@(mappend (lambda (x) (list (make-keyword x) x)) args)))
+  `(list ,@(mappend (lambda (x) (list (make-keyword x)
+                                      (if (find-class x nil)
+                                          `(ensure-dao ',x :name ,x)
+                                          x)))
+                    args)))
+
 (defun parse-pathname (file)
   (ematch file
     ((pathname :directory (last 3
@@ -194,10 +200,11 @@ exec ros -Q -- $0 "$@"
     (funcall fn)))
 
 (defun main (&rest files)
+  (trace ensure-dao)
   ;; (sb-profile:profile #.(package-name *package*))
   (my-connect "db.sqlite")
-  (ensure-table-exists 'fig2)
-  (ensure-table-exists 'fig3)
+  (mapcar #'ensure-table-exists '(tag problem domain ipcyear ipctrack algorithm heuristics default queue
+                                  fig2 fig3))
   ;; (mito:migrate-table 'fig2)
   ;; (mito:migrate-table 'fig3)
   (setf *kernel* (make-kernel 8))
@@ -205,12 +212,19 @@ exec ros -Q -- $0 "$@"
     (execute-sql
      (sxql:pragma "synchronous" 0))
     (execute-sql
-     (sxql:pragma "journal_mode" "persist")))
-  (progn
-    (dbi:with-transaction *connection*
-      (map nil #'save-dao
-           (pmapcar (lambda (file)
-                      (call-with-error-decoration
-                       (format nil "~&while parsing metadata for ~a:" file)
-                       (lambda () (parse (pathname file)))))
-                    files)))))
+     (sxql:pragma "journal_mode" "persist"))
+    ;; )
+    ;; (progn
+    (let ((results (mapcar (lambda (file)
+                              (call-with-error-decoration
+                               (format nil "~&while parsing metadata for ~a:" file)
+                               (lambda () (parse (pathname file)))))
+                            files)))
+      (dbi:with-transaction *connection*
+        (map nil #'save-dao results)))))
+
+
+
+
+
+
