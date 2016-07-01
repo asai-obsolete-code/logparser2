@@ -175,12 +175,14 @@
   (ematch file
     ((pathname :directory (last 3
                                 tag
-                                (split* "-" ipcyear ipctrack _ heuristics algorithm default queue _)
+                                (split* "-"
+                                        (ppcre "ipc([0-9]*)" (read ipcyear))
+                                        _ _ heuristics algorithm default queue _)
                                 domain)
-               :name      (split* "\\." problem _)
+               :name      (split* "\\." (ppcre "p([0-9]*)" (read problem)) _)
                :type      "out")
      (list* 'experiment (initargs tag
-                                  domain problem ipcyear ipctrack
+                                  domain problem ipcyear
                                   algorithm heuristics queue default)))))
 
 (defun call-with-error-decoration (decoration fn)
@@ -192,7 +194,7 @@
 
 (defun main (&rest files)
   (my-connect "db.sqlite")
-  (mapcar #'ensure-table-exists '(tag problem domain ipcyear ipctrack algorithm heuristics default queue
+  (mapcar #'ensure-table-exists '(tag domain algorithm heuristics default queue
                                   experiment))
   (setf *kernel* (make-kernel 8))
   (mito.logger:with-sql-logging
