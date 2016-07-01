@@ -65,15 +65,15 @@
   (:metaclass dao-table-class))
 
 (defclass experiment ()
-  ((tag :col-type (or tag :null) :initarg :tag) ;; arbitrary tag string
-   (problem :col-type (or problem :null) :initarg :problem)
-   (domain :col-type (or domain :null) :initarg :domain)
-   (ipcyear :col-type (or ipcyear :null) :initarg :ipcyear)
-   (ipctrack :col-type (or ipctrack :null) :initarg :ipctrack)
-   (algorithm :col-type (or algorithm :null) :initarg :algorithm)
-   (heuristics :col-type (or heuristics :null) :initarg :heuristics)
-   (default :col-type (or default :null) :initarg :default)
-   (queue :col-type (or queue :null) :initarg :queue)
+  ((tag :col-type tag :initarg :tag) ;; arbitrary tag string
+   (problem :col-type problem :initarg :problem)
+   (domain :col-type domain :initarg :domain)
+   (ipcyear :col-type ipcyear :initarg :ipcyear)
+   (ipctrack :col-type ipctrack :initarg :ipctrack)
+   (algorithm :col-type algorithm :initarg :algorithm)
+   (heuristics :col-type heuristics :initarg :heuristics)
+   (default :col-type default :initarg :default)
+   (queue :col-type queue :initarg :queue)
    ;;
    (search :col-type :float :initarg :search :initform -1)
    ;; (wall :col-type :float :initarg :wall :initform -1)
