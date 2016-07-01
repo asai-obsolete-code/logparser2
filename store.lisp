@@ -136,9 +136,11 @@
 ;;;; main
 
 (defun ensure-dao (name &rest args)
-  (or (values (apply #'find-dao name args) t)
+  (handler-case
       (values (apply #'create-dao name args) nil)
-      (error "insert-dao returns nil!")))
+    (dbi.error:<dbi-database-error> ()
+      (or (values (apply #'find-dao name args) t)
+          (error "insert-dao returns nil!")))))
 
 (defun ensure-dao/write (name &rest args)
   (or (values (apply #'find-dao name args) t)
