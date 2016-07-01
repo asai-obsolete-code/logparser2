@@ -59,7 +59,7 @@
 (defclass heuristics (db-symbol) ()
   (:metaclass dao-table-class)
   (:record-timestamps nil))
-(defclass default (db-symbol) ()
+(defclass default-tiebreaking (db-symbol) ()
   (:metaclass dao-table-class)
   (:record-timestamps nil))
 (defclass queue (db-symbol) ()
@@ -73,7 +73,7 @@
    (ipcyear :col-type :integer :initarg :ipcyear)
    (algorithm :col-type algorithm :initarg :algorithm)
    (heuristics :col-type heuristics :initarg :heuristics)
-   (default :col-type default :initarg :default)
+   (default-tiebreaking :col-type default-tiebreaking :initarg :default-tiebreaking)
    (queue :col-type queue :initarg :queue)
    ;;
    (search :col-type :float :initarg :search :initform -1)

@@ -183,13 +183,13 @@
                                 tag
                                 (split* "-"
                                         (ppcre "ipc([0-9]*)" (read ipcyear))
-                                        _ _ heuristics algorithm default queue _)
+                                        _ _ heuristics algorithm default-tiebreaking queue _)
                                 domain)
                :name      (split* "\\." (ppcre "p([0-9]*)" (read problem)) _)
                :type      "out")
      (list* 'experiment (initargs tag
                                   domain problem ipcyear
-                                  algorithm heuristics queue default)))))
+                                  algorithm heuristics queue default-tiebreaking)))))
 
 (defun call-with-error-decoration (decoration fn)
   (handler-bind ((error (lambda (c)
@@ -200,7 +200,7 @@
 
 (defun main (&rest files)
   (my-connect "db.sqlite")
-  (mapcar #'ensure-table-exists '(tag domain algorithm heuristics default queue
+  (mapcar #'ensure-table-exists '(tag domain algorithm heuristics default-tiebreaking queue
                                   experiment))
   (setf *kernel* (make-kernel 8))
   (mito.logger:with-sql-logging
