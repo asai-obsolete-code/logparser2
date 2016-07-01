@@ -140,10 +140,14 @@
       (values (apply #'create-dao name args) nil)
       (error "insert-dao returns nil!")))
 
+(defun ensure-dao/write (name &rest args)
+  (or (values (apply #'find-dao name args) t)
+      (values (apply #'make-instance name args) nil)
+      (error "insert-dao returns nil!")))
+
 (defun parse (file)
   (apply #'reinitialize-instance
-         (apply #'ensure-dao
-                (parse-pathname file))
+         (apply #'ensure-dao/write (parse-pathname file))
          (parse-output file)))
 
 (defun parse-output (file)
@@ -203,8 +207,10 @@
     (execute-sql
      (sxql:pragma "journal_mode" "persist")))
   (time
-   (pmapcar (lambda (file)
-              (call-with-error-decoration
-               (format nil "~&while parsing metadata for ~a:" file)
-               (lambda () (parse (pathname file)))))
-            files)))
+   (let ((results (pmapcar (lambda (file)
+                             (call-with-error-decoration
+                              (format nil "~&while parsing metadata for ~a:" file)
+                              (lambda () (parse (pathname file)))))
+                           files)))
+     (with-transaction *connection*
+       (map nil #'save-dao results)))))
