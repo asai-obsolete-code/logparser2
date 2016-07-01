@@ -17,6 +17,31 @@
   (ignore-errors (disconnect *connection*))
   (delete-file name))
 
+;; (my-connect)
+;; (defclass user ()
+;;   ((name :col-type (:varchar 64)
+;;          :initarg :name
+;;          :accessor user-name)
+;;    (email :col-type (or (:varchar 128) :null)
+;;           :initarg :email
+;;           :accessor user-email))
+;;   (:metaclass mito:dao-table-class))
+;; 
+;; 
+;; (defclass tweet ()
+;;   ((user :col-type user
+;;          :initarg :user
+;;          :accessor tweet-user))
+;;   (:metaclass mito:dao-table-class))
+;; 
+;; (defparameter me
+;;   (create-dao 'user :name "Eitaro Fukamachi" :email "e.arrows@gmail.com"))
+;; 
+;; (defparameter tw
+;;               (mito.logger:with-sql-logging
+;;                 (mito:create-dao 'tweet :user me)))
+
+
 (defclass db-symbol ()
   ((name :col-type :text :initarg :name))
   (:metaclass dao-table-class))
