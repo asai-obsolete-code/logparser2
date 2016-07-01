@@ -179,9 +179,9 @@
                                 domain)
                :name      (split* "\\." problem _)
                :type      "out")
-     (list* 'fig2 (initargs tag
-                            domain problem ipcyear ipctrack
-                            algorithm heuristics queue default)))))
+     (list* 'experiment (initargs tag
+                                  domain problem ipcyear ipctrack
+                                  algorithm heuristics queue default)))))
 
 (defun call-with-error-decoration (decoration fn)
   (handler-bind ((error (lambda (c)
@@ -193,7 +193,7 @@
 (defun main (&rest files)
   (my-connect "db.sqlite")
   (mapcar #'ensure-table-exists '(tag problem domain ipcyear ipctrack algorithm heuristics default queue
-                                  experiment fig2))
+                                  experiment))
   (setf *kernel* (make-kernel 8))
   (mito.logger:with-sql-logging
     (execute-sql

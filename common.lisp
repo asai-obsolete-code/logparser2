@@ -86,18 +86,3 @@
    (plan-cost   :col-type :integer :initarg :plan-cost :initform -1))
   (:metaclass dao-table-class))
 
-(defclass macro (experiment)
-     ((macros :col-type :integer :initarg :macros :initform 0)
-      (macros2 :col-type :integer :initarg :macros2 :initform 0)
-      (usedmacros :col-type :integer :initarg :usedmacros :initform 0))
-  (:metaclass dao-table-class))
-
-(defclass fig2 (macro)
-     ()
-  (:metaclass dao-table-class))
-
-(defclass fig3 (macro)
-     ((length :col-type :integer :initarg :length)
-      (seed :col-type :integer :initarg :seed))
-  (:metaclass dao-table-class))
-
