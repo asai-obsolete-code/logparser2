@@ -1,9 +1,10 @@
 ;; (ql:register-local-projects)
 (ql:quickload '(:eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lisp-namespace :lparallel
-                :cl-syntax-interpol) :silent t)
+                :cl-syntax-interpol :recursive-restart) :silent t)
 
 (defpackage :ros.script.plot
   (:use :cl :eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lparallel :sxql :dbi
+        :recursive-restart
         :cl-interpol))
 
 (in-package :ros.script.plot)
