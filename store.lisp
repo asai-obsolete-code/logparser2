@@ -145,34 +145,25 @@
 ;; better to do in SQL level, but sqlite is not good for this purpose
 (defvar *lock* (bt:make-lock "db-lock"))
 (defun ensure-dao (name &rest args)
-  (bt:with-lock-held (*lock*)
-    (let ((retry 0))
-      (unwind-protect
-          (or (block nil
-                (tagbody
-                  :start
-                  (return
-                    (handler-case
-                        (values (apply #'create-dao name args) nil)
-                      (dbi.error:<dbi-database-error> (c)
-                        (case (slot-value c 'dbi.error::error-code)
-                          (:busy (incf retry) (go :start))
-                          (otherwise (go :start2))))))
-                  :start2
-                  (return
-                    (handler-case
-                        (values (apply #'find-dao name args) t)
-                      (dbi.error:<dbi-database-error> (c)
-                        (case (slot-value c 'dbi.error::error-code)
-                          (:busy (incf retry) (go :start2))
-                          (otherwise (error "unknown error!"))))))))
-              (error "should not return nil!"))
-        (when (> retry 0)
-          (format t "~&~a retries" retry))))))
+  (handler-case
+      (values (bt:with-lock-held (*lock*)
+                (apply #'create-dao name args)) nil)
+    (dbi.error:<dbi-database-error> (c)
+      (ecase (slot-value c 'dbi.error::error-code)
+        (:constraint
+         (values (or (bt:with-lock-held (*lock*)
+                       (apply #'find-dao name args))
+                     (error "should not return nil!")) t))
+        (otherwise (error "unknown error!"))))))
+
+(defun ensure-dao/write (name &rest args)
+  (or (values (bt:with-lock-held (*lock*)
+                (apply #'find-dao name args)) t)
+      (values (apply #'make-dao-instance name args) nil)))
 
 (defun parse (file pathname-parser)
   (apply #'reinitialize-instance
-         (apply #'ensure-dao (funcall pathname-parser file))
+         (apply #'ensure-dao/write (funcall pathname-parser file))
          (parse-output file)))
 
 (defun parse-output (file)
