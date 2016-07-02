@@ -10,9 +10,12 @@
 
 (setf *auto-migration-mode* t)
 
-(defun my-connect (&optional (name "db.sqlite"))
+(defun my-connect (&optional (name "db.sqlite") (toplevel t))
   (declare (ignorable name))
-  (connect-toplevel :sqlite3 :database-name name))
+  (format t "~&connecting... [~a]" name)
+  (if toplevel
+      (connect-toplevel :sqlite3 :database-name name)
+      (connect :sqlite3 :database-name name)))
 (defun reset (&optional (name "db.sqlite"))
   (ignore-errors (disconnect-toplevel))
   (delete-file name))
