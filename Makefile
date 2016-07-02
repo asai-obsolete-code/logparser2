@@ -1,5 +1,5 @@
 
-.PHONY: pull db
+.PHONY: pull db ramdisk
 all: store.bin
 
 pull:
@@ -17,6 +17,8 @@ db.sqlite: store.bin
 
 clean:
 	-rm *.bin *.sqlite *~
+	-sudo umount /ramdisk
+	-sudo rmdir  /ramdisk
 
 benchmark: store.bin
 	-rm db.sqlite
@@ -24,3 +26,9 @@ benchmark: store.bin
 	time bash -c 'find -L -name "*.out" | xargs ./store.bin'
 	@echo re-insertion
 	time bash -c 'find -L -name "*.out" | xargs ./store.bin'
+
+ramdisk:
+	sudo mkdir -p /ramdisk
+	sudo mount -t ramfs none /ramdisk
+	sudo chmod 777 /ramdisk
+
