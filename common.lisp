@@ -1,20 +1,24 @@
 ;; (ql:register-local-projects)
 (ql:quickload '(:eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lisp-namespace :lparallel
-                :cl-syntax-interpol) :silent t)
+                :cl-syntax-interpol :recursive-restart) :silent t)
 
 (defpackage :ros.script.plot
   (:use :cl :eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lparallel :sxql :dbi
+        :recursive-restart
         :cl-interpol))
 
 (in-package :ros.script.plot)
 
 (setf *auto-migration-mode* t)
 
-(defun my-connect (&optional (name "db.sqlite"))
+(defun my-connect (&optional (name "db.sqlite") (toplevel t))
   (declare (ignorable name))
-  (connect-toplevel :sqlite3 :database-name name))
+  (format t "~&connecting... [~a]" name)
+  (if toplevel
+      (connect-toplevel :sqlite3 :database-name name)
+      (connect :sqlite3 :database-name name)))
 (defun reset (&optional (name "db.sqlite"))
-  (ignore-errors (disconnect-toplevel *connection*))
+  (ignore-errors (disconnect-toplevel))
   (delete-file name))
 
 ;; (my-connect)

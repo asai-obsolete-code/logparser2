@@ -135,12 +135,33 @@
 
 ;;;; main
 
+;; better to do in SQL level, but sqlite is not good for this purpose
+(defvar *lock* (bt:make-lock "db-lock"))
 (defun ensure-dao (name &rest args)
-  (handler-case
-      (values (apply #'create-dao name args) nil)
-    (dbi.error:<dbi-database-error> ()
-      (or (values (apply #'find-dao name args) t)
-          (error "insert-dao returns nil!")))))
+  (bt:with-lock-held (*lock*)
+    (let ((retry 0))
+      (unwind-protect
+          (or (block nil
+                (tagbody
+                  :start
+                  (return
+                    (handler-case
+                        (values (apply #'create-dao name args) nil)
+                      (dbi.error:<dbi-database-error> (c)
+                        (case (slot-value c 'dbi.error::error-code)
+                          (:busy (incf retry) (go :start))
+                          (otherwise (go :start2))))))
+                  :start2
+                  (return
+                    (handler-case
+                        (values (apply #'find-dao name args) t)
+                      (dbi.error:<dbi-database-error> (c)
+                        (case (slot-value c 'dbi.error::error-code)
+                          (:busy (incf retry) (go :start2))
+                          (otherwise (error "unknown error!"))))))))
+              (error "should not return nil!"))
+        (when (> retry 0)
+          (format t "~&~a retries" retry))))))
 
 (defun ensure-dao/write (name &rest args)
   "runs the duplicate checking, but do not write the results"
@@ -206,19 +227,20 @@
 
 (defun main (&rest files)
   (my-connect "db.sqlite")
+  (set-pragma)
   (mapcar #'ensure-table-exists '(tag domain algorithm heuristics default-tiebreaking queue
                                   experiment))
   (setf *kernel* (make-kernel 8))
-  (mito.logger:with-sql-logging
-    (execute-sql
-     (sxql:pragma "synchronous" 0))
-    (execute-sql
-     (sxql:pragma "journal_mode" "persist")))
-  (time
-   (let ((results (pmapcar (lambda (file)
-                             (call-with-error-decoration
-                              (format nil "~&while parsing metadata for ~a:" file)
-                              (lambda () (parse (pathname file)))))
-                           files)))
-     (with-transaction *connection*
-       (map nil #'save-dao results)))))
+  (let ((results (time (pmapcar (lambda (file)
+                                  (call-with-error-decoration
+                                   (format nil "~&while parsing metadata for ~a:" file)
+                                   (lambda () (parse (pathname file)))))
+                                files))))
+    (format t "~%for creation.")
+    (let ((t1 (get-internal-real-time)))
+      (time
+       (with-transaction *connection*
+         (map nil #'save-dao results)))
+      (let ((duration (float (/ (- (get-internal-real-time) t1) internal-time-units-per-second))))
+        (format t "~%~a seconds for ~a inserts: ~a inserts/sec.~%"
+                duration (length results) (/ (length results) duration))))))
