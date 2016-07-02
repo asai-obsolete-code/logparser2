@@ -176,9 +176,9 @@
       (values (apply #'make-instance name args) nil)
       (error "insert-dao returns nil!")))
 
-(defun parse (file)
+(defun parse (file pathname-parser)
   (apply #'reinitialize-instance
-         (apply #'ensure-dao/write (parse-pathname file))
+         (apply #'ensure-dao/write (funcall pathname-parser file))
          (parse-output file)))
 
 (defun parse-output (file)
@@ -206,20 +206,6 @@
                                           x)))
                     args)))
 
-(defun parse-pathname (file)
-  (ematch file
-    ((pathname :directory (last 3
-                                tag
-                                (split* "-"
-                                        (ipcyear ipcyear)
-                                        _ _ heuristics algorithm default-tiebreaking queue _)
-                                domain)
-               :name      (split* "\\." (problem problem) _)
-               :type      "out")
-     (list* 'experiment (initargs tag
-                                  domain problem ipcyear
-                                  algorithm heuristics queue default-tiebreaking)))))
-
 (defun call-with-error-decoration (decoration fn)
   (handler-bind ((error (lambda (c)
                           (pprint-logical-block (*error-output* nil :prefix decoration)
@@ -227,22 +213,4 @@
                             (signal c)))))
     (funcall fn)))
 
-(defun main (&rest files)
-  (my-connect "db.sqlite")
-  (set-pragma)
-  (mapcar #'ensure-table-exists '(tag domain algorithm heuristics default-tiebreaking queue
-                                  experiment))
-  (setf *kernel* (make-kernel 8))
-  (let ((results (time (pmapcar (lambda (file)
-                                  (call-with-error-decoration
-                                   (format nil "~&while parsing metadata for ~a:" file)
-                                   (lambda () (parse (pathname file)))))
-                                files))))
-    (format t "~%for creation.")
-    (let ((t1 (get-internal-real-time)))
-      (time
-       (with-transaction *connection*
-         (map nil #'save-dao results)))
-      (let ((duration (float (/ (- (get-internal-real-time) t1) internal-time-units-per-second))))
-        (format t "~%~a seconds for ~a inserts: ~a inserts/sec.~%"
-                duration (length results) (/ (length results) duration))))))
+
