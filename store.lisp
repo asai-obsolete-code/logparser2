@@ -216,6 +216,13 @@
                                   (ppcre "(mp|probe)" algorithm) _))
      (list* 'fig2 (initargs tag domain problem ipcyear algorithm)))))
 
+(defun set-pragma ()
+  (mito.logger:with-sql-logging
+    (execute-sql
+     (sxql:pragma "synchronous" 0))
+    (execute-sql
+     (sxql:pragma "journal_mode" "memory"))))
+
 (defun call-with-error-decoration (decoration fn)
   (handler-bind ((error (lambda (c)
                           (pprint-logical-block (*error-output* nil :prefix decoration)
@@ -225,13 +232,9 @@
 
 (defun main (&rest files)
   (my-connect "db.sqlite")
+  (set-pragma)
   (mapcar #'ensure-table-exists '(tag domain algorithm heuristics fig2 fig3))
   (setf *kernel* (make-kernel 8))
-  (mito.logger:with-sql-logging
-    (execute-sql
-     (sxql:pragma "synchronous" 0))
-    (execute-sql
-     (sxql:pragma "journal_mode" "memory")))
   (let ((results (time (pmapcar (lambda (file)
                                   (call-with-error-decoration
                                    (format nil "~&while parsing metadata for ~a:" file)
