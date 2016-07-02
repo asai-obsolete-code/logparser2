@@ -159,7 +159,10 @@
 (defun ensure-dao/write (name &rest args)
   (or (values (bt:with-lock-held (*lock*)
                 (apply #'find-dao name args)) t)
-      (values (apply #'make-dao-instance name args) nil)))
+      (values (let ((obj (apply #'make-dao-instance name args)))
+                (setf (dao-synced obj) nil)
+                obj)
+              nil)))
 
 (defun parse (file pathname-parser)
   (apply #'reinitialize-instance
