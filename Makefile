@@ -17,8 +17,6 @@ db.sqlite: store.bin
 
 clean:
 	-rm *.bin *.sqlite *~
-	-sudo umount /ramdisk
-	-sudo rmdir  /ramdisk
 
 benchmark: store.bin
 	-rm db.sqlite
@@ -32,3 +30,6 @@ ramdisk:
 	sudo mount -t ramfs none /ramdisk
 	sudo chmod 777 /ramdisk
 
+clean-ramdisk:
+	-sudo umount /ramdisk
+	-sudo rmdir  /ramdisk
