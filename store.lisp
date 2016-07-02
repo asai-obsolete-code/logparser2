@@ -213,4 +213,9 @@
                             (signal c)))))
     (funcall fn)))
 
-
+(defun set-pragma ()
+  (mito.logger:with-sql-logging
+    (execute-sql
+     (sxql:pragma "synchronous" 0))
+    (execute-sql
+     (sxql:pragma "journal_mode" "memory"))))
