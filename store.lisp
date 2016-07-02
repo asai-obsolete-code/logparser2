@@ -2,7 +2,7 @@
 (declaim (optimize (debug 3) (speed 0)))
 (lispn:define-namespace parser)
 
-;;;; parsers
+;;;; patterns
 
 (defpattern last (n &rest subpatterns)
   (check-type n integer)
@@ -25,6 +25,13 @@
     `(guard1 (,it :type string) (stringp ,it)
              (ppcre:split ,regex ,it)
              (list* ,@subpatterns))))
+
+(defpattern ipcyear (pattern)
+  `(ppcre "ipc([0-9]*)" (read ,pattern)))
+(defpattern problem (pattern)
+  `(ppcre "p([0-9]*)" (read ,pattern)))
+
+;;;; parsers
 
 (defmacro defparser (name args &body body)
   `(setf (symbol-parser ',name) (sb-int:named-lambda ,name ,args ,@body)))
@@ -133,7 +140,7 @@
      (maxf (local :memory -1) (floor (* 1000 mem)))
      nil)))
 
-;;;; main
+;;;; procedures
 
 ;; better to do in SQL level, but sqlite is not good for this purpose
 (defvar *lock* (bt:make-lock "db-lock"))
@@ -198,11 +205,6 @@
                                           `(ensure-dao ',x :name ,x)
                                           x)))
                     args)))
-
-(defpattern ipcyear (pattern)
-  `(ppcre "ipc([0-9]*)" (read ,pattern)))
-(defpattern problem (pattern)
-  `(ppcre "p([0-9]*)" (read ,pattern)))
 
 (defun parse-pathname (file)
   (ematch file
