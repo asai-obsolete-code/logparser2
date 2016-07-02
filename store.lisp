@@ -2,7 +2,7 @@
 (declaim (optimize (debug 3) (speed 0)))
 (lispn:define-namespace parser)
 
-;;;; parsers
+;;;; patterns
 
 (defpattern last (n &rest subpatterns)
   (check-type n integer)
@@ -25,6 +25,13 @@
     `(guard1 (,it :type string) (stringp ,it)
              (ppcre:split ,regex ,it)
              (list* ,@subpatterns))))
+
+(defpattern ipcyear (pattern)
+  `(ppcre "ipc([0-9]*)" (read ,pattern)))
+(defpattern problem (pattern)
+  `(ppcre "p([0-9]*)" (read ,pattern)))
+
+;;;; parsers
 
 (defmacro defparser (name args &body body)
   `(setf (symbol-parser ',name) (sb-int:named-lambda ,name ,args ,@body)))
@@ -133,7 +140,7 @@
      (maxf (local :memory -1) (floor (* 1000 mem)))
      nil)))
 
-;;;; main
+;;;; procedures
 
 ;; better to do in SQL level, but sqlite is not good for this purpose
 (defvar *lock* (bt:make-lock "db-lock"))
@@ -169,9 +176,9 @@
       (values (apply #'make-instance name args) nil)
       (error "insert-dao returns nil!")))
 
-(defun parse (file)
+(defun parse (file pathname-parser)
   (apply #'reinitialize-instance
-         (apply #'ensure-dao/write (parse-pathname file))
+         (apply #'ensure-dao/write (funcall pathname-parser file))
          (parse-output file)))
 
 (defun parse-output (file)
@@ -199,51 +206,6 @@
                                           x)))
                     args)))
 
-(defpattern ipcyear (pattern)
-  `(ppcre "ipc([0-9]*)" (read ,pattern)))
-(defpattern problem (pattern)
-  `(ppcre "p([0-9]*)" (read ,pattern)))
-
-(defun parse-pathname (file)
-  (ematch file
-    ;; FD-based 
-    ((pathname :directory (last 3
-                                (split "-" "fig3" (read length) tag)
-                                (split* "-" (ipcyear ipcyear) _)
-                                domain)
-               :name      (split* "\\." (problem problem)
-                                  (ppcre "(..1)([el])([0-9]*)" heuristics algorithm (read seed)) _))
-     (list* 'fig3 (initargs tag domain problem ipcyear heuristics algorithm length seed)))
-    ;; mp, probe
-    ((pathname :directory (last 3
-                                (split "-" "fig3" (read length) tag)
-                                (split* "-" (ipcyear ipcyear) _)
-                                domain)
-               :name      (split* "\\." (problem problem)
-                                  (ppcre "(mp|probe)([0-9]*)" algorithm (read seed)) _))
-     (list* 'fig3 (initargs tag domain problem ipcyear algorithm length seed)))
-    ((pathname :directory (last 3
-                                (split "-" "fig2" tag)
-                                (split* "-" (ipcyear ipcyear) _)
-                                domain)
-               :name      (split* "\\." (problem problem)
-                                  (ppcre "(..1)([el])" heuristics algorithm) _))
-     (list* 'fig2 (initargs tag domain problem ipcyear heuristics algorithm)))
-    ((pathname :directory (last 3
-                                (split "-" "fig2" tag)
-                                (split* "-" (ipcyear ipcyear) _)
-                                domain)
-               :name      (split* "\\." (problem problem)
-                                  (ppcre "(mp|probe)" algorithm) _))
-     (list* 'fig2 (initargs tag domain problem ipcyear algorithm)))))
-
-(defun set-pragma ()
-  (mito.logger:with-sql-logging
-    (execute-sql
-     (sxql:pragma "synchronous" 0))
-    (execute-sql
-     (sxql:pragma "journal_mode" "memory"))))
-
 (defun call-with-error-decoration (decoration fn)
   (handler-bind ((error (lambda (c)
                           (pprint-logical-block (*error-output* nil :prefix decoration)
@@ -251,21 +213,9 @@
                             (signal c)))))
     (funcall fn)))
 
-(defun main (&rest files)
-  (my-connect "db.sqlite")
-  (set-pragma)
-  (mapcar #'ensure-table-exists '(tag domain algorithm heuristics fig2 fig3))
-  (setf *kernel* (make-kernel 8))
-  (let ((results (time (pmapcar (lambda (file)
-                                  (call-with-error-decoration
-                                   (format nil "~&while parsing metadata for ~a:" file)
-                                   (lambda () (parse (pathname file)))))
-                                files))))
-    (format t "~%for creation.")
-    (let ((t1 (get-internal-real-time)))
-      (time
-       (with-transaction *connection*
-         (map nil #'save-dao results)))
-      (let ((duration (float (/ (- (get-internal-real-time) t1) internal-time-units-per-second))))
-        (format t "~%~a seconds for ~a inserts: ~a inserts/sec.~%"
-                duration (length results) (/ (length results) duration))))))
+(defun set-pragma ()
+  (mito.logger:with-sql-logging
+    (execute-sql
+     (sxql:pragma "synchronous" 0))
+    (execute-sql
+     (sxql:pragma "journal_mode" "memory"))))

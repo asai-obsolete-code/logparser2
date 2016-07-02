@@ -9,3 +9,55 @@ exec ros -Q -- $0 "$@"
 (load "common.lisp")
 (load "store.lisp")
 (in-package :ros.script.plot)
+
+(defun parse-pathname (file)
+  (ematch file
+    ;; FD-based 
+    ((pathname :directory (last 3
+                                (split "-" "fig3" (read length) tag)
+                                (split* "-" (ipcyear ipcyear) _)
+                                domain)
+               :name      (split* "\\." (problem problem)
+                                  (ppcre "(..1)([el])([0-9]*)" heuristics algorithm (read seed)) _))
+     (list* 'fig3 (initargs tag domain problem ipcyear heuristics algorithm length seed)))
+    ;; mp, probe
+    ((pathname :directory (last 3
+                                (split "-" "fig3" (read length) tag)
+                                (split* "-" (ipcyear ipcyear) _)
+                                domain)
+               :name      (split* "\\." (problem problem)
+                                  (ppcre "(mp|probe)([0-9]*)" algorithm (read seed)) _))
+     (list* 'fig3 (initargs tag domain problem ipcyear algorithm length seed)))
+    ((pathname :directory (last 3
+                                (split "-" "fig2" tag)
+                                (split* "-" (ipcyear ipcyear) _)
+                                domain)
+               :name      (split* "\\." (problem problem)
+                                  (ppcre "(..1)([el])" heuristics algorithm) _))
+     (list* 'fig2 (initargs tag domain problem ipcyear heuristics algorithm)))
+    ((pathname :directory (last 3
+                                (split "-" "fig2" tag)
+                                (split* "-" (ipcyear ipcyear) _)
+                                domain)
+               :name      (split* "\\." (problem problem)
+                                  (ppcre "(mp|probe)" algorithm) _))
+     (list* 'fig2 (initargs tag domain problem ipcyear algorithm)))))
+
+(defun main (&rest files)
+  (my-connect "db.sqlite")
+  (set-pragma)
+  (mapcar #'ensure-table-exists '(tag domain algorithm heuristics fig2 fig3))
+  (setf *kernel* (make-kernel 8))
+  (let ((results (time (pmapcar (lambda (file)
+                                  (call-with-error-decoration
+                                   (format nil "~&while parsing metadata for ~a:" file)
+                                   (lambda () (parse (pathname file) #'parse-pathname))))
+                                files))))
+    (format t "~%for creation.")
+    (let ((t1 (get-internal-real-time)))
+      (time
+       (with-transaction *connection*
+         (map nil #'save-dao results)))
+      (let ((duration (float (/ (- (get-internal-real-time) t1) internal-time-units-per-second))))
+        (format t "~%~a seconds for ~a inserts: ~a inserts/sec.~%"
+                duration (length results) (/ (length results) duration))))))
