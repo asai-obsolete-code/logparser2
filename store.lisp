@@ -170,15 +170,9 @@
         (when (> retry 0)
           (format t "~&~a retries" retry))))))
 
-(defun ensure-dao/write (name &rest args)
-  "runs the duplicate checking, but do not write the results"
-  (or (values (apply #'find-dao name args) t)
-      (values (apply #'make-dao-instance name args) nil)
-      (error "insert-dao returns nil!")))
-
 (defun parse (file pathname-parser)
   (apply #'reinitialize-instance
-         (apply #'ensure-dao/write (funcall pathname-parser file))
+         (apply #'ensure-dao (funcall pathname-parser file))
          (parse-output file)))
 
 (defun parse-output (file)
