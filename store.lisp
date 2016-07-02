@@ -232,11 +232,16 @@
      (sxql:pragma "synchronous" 0))
     (execute-sql
      (sxql:pragma "journal_mode" "persist")))
-  (time
-   (let ((results (pmapcar (lambda (file)
-                             (call-with-error-decoration
-                              (format nil "~&while parsing metadata for ~a:" file)
-                              (lambda () (parse (pathname file)))))
-                           files)))
-     (with-transaction *connection*
-       (map nil #'save-dao results)))))
+  (let ((results (time (pmapcar (lambda (file)
+                                  (call-with-error-decoration
+                                   (format nil "~&while parsing metadata for ~a:" file)
+                                   (lambda () (parse (pathname file)))))
+                                files))))
+    (format t "~%for creation.")
+    (let ((t1 (get-internal-real-time)))
+      (time
+       (with-transaction *connection*
+         (map nil #'save-dao results)))
+      (let ((duration (float (/ (- (get-internal-real-time) t1) internal-time-units-per-second))))
+        (format t "~%~a seconds for ~a inserts: ~a inserts/sec.~%"
+                duration (length results) (/ (length results) duration))))))
