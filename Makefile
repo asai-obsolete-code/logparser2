@@ -5,7 +5,7 @@ all: store.bin
 pull:
 	-git pull --rebase
 
-%.bin : %.ros common.lisp
+%.bin : %.ros $(wildcard *.lisp)
 	$(MAKE) pull
 	ros dump executable $<
 	mv $(basename $@) $@
