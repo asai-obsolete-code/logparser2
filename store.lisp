@@ -178,15 +178,20 @@
                                           x)))
                     args)))
 
+(defpattern ipcyear (pattern)
+  `(ppcre "ipc([0-9]*)" (read ,pattern)))
+(defpattern problem (pattern)
+  `(ppcre "p([0-9]*)" (read ,pattern)))
+
 (defun parse-pathname (file)
   (ematch file
     ((pathname :directory (last 3
                                 tag
                                 (split* "-"
-                                        (ppcre "ipc([0-9]*)" (read ipcyear))
+                                        (ipcyear ipcyear)
                                         _ _ heuristics algorithm default-tiebreaking queue _)
                                 domain)
-               :name      (split* "\\." (ppcre "p([0-9]*)" (read problem)) _)
+               :name      (split* "\\." (problem problem) _)
                :type      "out")
      (list* 'experiment (initargs tag
                                   domain problem ipcyear
