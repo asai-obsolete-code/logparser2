@@ -14,7 +14,7 @@
   (declare (ignorable name))
   (connect-toplevel :sqlite3 :database-name name))
 (defun reset (&optional (name "db.sqlite"))
-  (ignore-errors (disconnect-toplevel *connection*))
+  (ignore-errors (disconnect-toplevel))
   (delete-file name))
 
 ;; (my-connect)
