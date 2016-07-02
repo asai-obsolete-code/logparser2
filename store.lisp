@@ -135,29 +135,33 @@
 
 ;;;; main
 
+;; better to do in SQL level, but sqlite is not good for this purpose
+(defvar *lock* (bt:make-lock "db-lock"))
 (defun ensure-dao (name &rest args)
-  (let ((retry 0))
-    (unwind-protect
-        (block nil
-          (tagbody
-            :start
-            (return
-              (handler-case
-                  (values (apply #'create-dao name args) nil)
-                (dbi.error:<dbi-database-error> (c)
-                  (case (slot-value c 'dbi.error::error-code)
-                    (:busy (incf retry) (go :start))))))
-            :start2
-            (return
-              (handler-case
-                  (or (values (apply #'find-dao name args) t)
-                      (error "find-dao returns nil!"))
-                (dbi.error:<dbi-database-error> (c)
-                  (case (slot-value c 'dbi.error::error-code)
-                    (:busy (incf retry) (go :start2))
-                    (otherwise (error "unknown error!"))))))))
-      (when (> retry 0)
-        (format t "~&~a retries" retry)))))
+  (bt:with-lock-held (*lock*)
+    (let ((retry 0))
+      (unwind-protect
+          (or (block nil
+                (tagbody
+                  :start
+                  (return
+                    (handler-case
+                        (values (apply #'create-dao name args) nil)
+                      (dbi.error:<dbi-database-error> (c)
+                        (case (slot-value c 'dbi.error::error-code)
+                          (:busy (incf retry) (go :start))
+                          (otherwise (go :start2))))))
+                  :start2
+                  (return
+                    (handler-case
+                        (values (apply #'find-dao name args) t)
+                      (dbi.error:<dbi-database-error> (c)
+                        (case (slot-value c 'dbi.error::error-code)
+                          (:busy (incf retry) (go :start2))
+                          (otherwise (error "unknown error!"))))))))
+              (error "should not return nil!"))
+        (when (> retry 0)
+          (format t "~&~a retries" retry))))))
 
 (defun ensure-dao/write (name &rest args)
   "runs the duplicate checking, but do not write the results"
