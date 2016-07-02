@@ -173,7 +173,7 @@
 (defun ensure-dao/write (name &rest args)
   "runs the duplicate checking, but do not write the results"
   (or (values (apply #'find-dao name args) t)
-      (values (apply #'make-instance name args) nil)
+      (values (apply #'make-dao-instance name args) nil)
       (error "insert-dao returns nil!")))
 
 (defun parse (file pathname-parser)
