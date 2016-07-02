@@ -1,4 +1,6 @@
 
+$(info $(shell git pull))
+
 .PHONY: pull db ramdisk
 all: store.bin
 
@@ -6,7 +8,6 @@ pull:
 	-git pull --rebase
 
 %.bin : %.ros $(wildcard *.lisp)
-	$(MAKE) pull
 	ros dump executable $<
 	mv $(basename $@) $@
 
