@@ -231,7 +231,7 @@
     (execute-sql
      (sxql:pragma "synchronous" 0))
     (execute-sql
-     (sxql:pragma "journal_mode" "persist")))
+     (sxql:pragma "journal_mode" "memory")))
   (let ((results (time (pmapcar (lambda (file)
                                   (call-with-error-decoration
                                    (format nil "~&while parsing metadata for ~a:" file)
