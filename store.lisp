@@ -176,7 +176,7 @@
             (with-open-file (s parsed :if-does-not-exist :create)))))
     (error (c)
       (format *error-output* "Error while parsing file: ~a" file)
-      (pprint-logical-block (*error-output* nil :prefix decoration)
+      (pprint-logical-block (*error-output* nil)
         (pprint-indent :block 2)
         (describe c)))))
 
