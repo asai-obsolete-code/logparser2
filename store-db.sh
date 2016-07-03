@@ -5,7 +5,7 @@ copytoram (){
 }
 
 main (){
-    trap "rm -r /run/shm/$1" RETURN SIGINT SIGTERM
+    trap "rm -r /run/shm/$1" RETURN
     copytoram $1
     find -L /run/shm/$1 -name "*.out" | xargs ./store.bin
 }
@@ -13,5 +13,5 @@ main (){
 
 for d in */
 do
-    main $d || break
+    main $d
 done
