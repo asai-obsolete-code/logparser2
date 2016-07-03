@@ -17,13 +17,16 @@ trap "mv -vb $dir/db.sqlite db.sqlite" EXIT
 
 ln -sf $dir/db.sqlite .
 
-copytoram (){
+copy_to_ram (){
     rsync -rL --exclude="*.qsub" --exclude="*.pddl" --exclude="*.1" $1 /run/shm/$1
+}
+copy_from_ram (){
+    rsync -rL --exclude="*.err" --exclude="*.out" /run/shm/$1 $1
 }
 
 main (){
-    trap "rm -r /run/shm/$1" RETURN
-    copytoram $1
+    trap "copy_from_ram $1" RETURN
+    copy_to_ram $1
     find -L /run/shm/$1 -name "*.out" | xargs ./store.bin
 }
 

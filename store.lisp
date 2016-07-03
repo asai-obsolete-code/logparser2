@@ -166,9 +166,14 @@
 
 (defun parse (file pathname-parser)
   (handler-case
-      (apply #'reinitialize-instance
-             (apply #'ensure-dao (funcall pathname-parser file))
-             (parse-output file))
+      (let ((parsed (make-pathname :type "parsed" :defaults file)))
+        (when (or (not (probe-file parsed))
+                  (< (file-write-date parsed) (file-write-date file)))
+          (prog1
+            (apply #'reinitialize-instance
+                   (apply #'ensure-dao (funcall pathname-parser file))
+                   (parse-output file))
+            (with-open-file (s parsed :if-does-not-exist :create)))))
     (error (c)
       (format *error-output* "Error while parsing file: ~a" file)
       (pprint-logical-block (*error-output* nil :prefix decoration)
