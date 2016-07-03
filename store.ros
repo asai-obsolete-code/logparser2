@@ -51,12 +51,12 @@ exec ros -Q -- $0 "$@"
   (mapcar #'ensure-table-exists '(tag domain algorithm heuristics fig2 fig3))
   (setf *kernel* (make-kernel 8))
   (let ((t1 (get-internal-real-time)))
-    (let ((results (time (pmapcar (lambda (file)
-                                    (parse (pathname file) #'parse-pathname))
-                                  files))))
+    (let ((results (remove nil (time (pmapcar (lambda (file)
+                                                (parse (pathname file) #'parse-pathname))
+                                              files)))))
       (time
        (with-transaction *connection*
-         (map nil (lambda (dao) (when dao (update-dao dao))) results)))
+         (map nil #'update-dao results)))
       (let ((duration (float (/ (- (get-internal-real-time) t1) internal-time-units-per-second))))
         (format t "~%--------- ~a seconds for ~a inserts: ~a inserts/sec.~%"
                 duration (length results) (/ (length results)
