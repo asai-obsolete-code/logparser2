@@ -27,7 +27,8 @@ exec ros -Q -- $0 "$@"
                                 domain)
                :name      (split* "\\." (problem problem)
                                   (ppcre "(mp|probe)([0-9]*)" algorithm (read seed)) _))
-     (list* 'fig3 (initargs tag domain problem ipcyear algorithm length seed)))
+     (let ((heuristics algorithm))
+       (list* 'fig3 (initargs tag domain problem ipcyear heuristics algorithm length seed))))
     ((pathname :directory (last 3
                                 (split "-" "fig2" tag)
                                 (split* "-" (ipcyear ipcyear) _)
@@ -41,7 +42,8 @@ exec ros -Q -- $0 "$@"
                                 domain)
                :name      (split* "\\." (problem problem)
                                   (ppcre "(mp|probe)" algorithm) _))
-     (list* 'fig2 (initargs tag domain problem ipcyear algorithm)))))
+     (let ((heuristics algorithm))
+       (list* 'fig2 (initargs tag domain problem ipcyear heuristics algorithm))))))
 
 (defun main (&rest files)
   (my-connect "db.sqlite")

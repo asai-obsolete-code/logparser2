@@ -70,7 +70,7 @@
    (domain :col-type domain :initarg :domain)
    (ipcyear :col-type :integer :initarg :ipcyear)
    (algorithm :col-type algorithm :initarg :algorithm)
-   (heuristics :col-type (or heuristics :null) :initarg :heuristics)
+   (heuristics :col-type heuristics :initarg :heuristics)
    ;;
    (search :col-type :float :initarg :search :initform -1)
    ;; (wall :col-type :float :initarg :wall :initform -1)
