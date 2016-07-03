@@ -49,7 +49,7 @@ exec ros -Q -- $0 "$@"
   (my-connect "db.sqlite")
   (set-pragma)
   (mapcar #'ensure-table-exists '(tag domain algorithm heuristics fig2 fig3))
-  (setf *kernel* (make-kernel 8))
+  (setf *kernel* (make-kernel (read-from-string (uiop:run-program "grep processor /proc/cpuinfo | wc -l" :output :string))))
   (let ((t1 (get-internal-real-time)))
     (let ((results (remove nil (time (pmapcar (lambda (file)
                                                 (parse (pathname file) #'parse-pathname))
