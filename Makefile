@@ -1,7 +1,7 @@
 
 $(info $(shell git pull))
 
-.PHONY: pull db ramdisk
+.PHONY: pull db ramdisk distclean clean
 all: store.bin
 
 pull:
@@ -17,7 +17,9 @@ db.sqlite: store.bin
 	find -L -name "*.out" | xargs ./store.bin 
 
 clean:
-	-rm *.bin *.sqlite *~
+	-rm *.sqlite *~
+distclean: clean
+	-rm *.bin
 
 benchmark: store.bin
 	-rm db.sqlite
