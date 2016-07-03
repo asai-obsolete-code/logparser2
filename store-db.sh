@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/bash -x
 
 copytoram (){
-    rsync -rL --exclude="*.qsub" --exclude="*.pddl" --exclude="*.1" $1 /run/shm/
+    rsync -rL --exclude="*.qsub" --exclude="*.pddl" --exclude="*.1" $1 /run/shm/$1
 }
 
 main (){
