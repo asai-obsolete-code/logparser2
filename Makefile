@@ -11,9 +11,7 @@ pull:
 	ros dump executable $<
 	mv $(basename $@) $@
 
-db: db.sqlite
-
-db.sqlite: store.bin
+db: store.bin
 	./store-db.sh
 
 clean:
