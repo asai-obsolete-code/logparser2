@@ -52,13 +52,11 @@ exec ros -Q -- $0 "$@"
   (setf *kernel* (make-kernel 8))
   (let ((t1 (get-internal-real-time)))
     (let ((results (time (pmapcar (lambda (file)
-                                    (call-with-error-decoration
-                                     (format nil "~&while parsing metadata for ~a:" file)
-                                     (lambda () (parse (pathname file) #'parse-pathname))))
+                                    (parse (pathname file) #'parse-pathname))
                                   files))))
       (time
        (with-transaction *connection*
-         (map nil #'update-dao results)))
+         (map nil (lambda (dao) (when dao (update-dao dao))) results)))
       (let ((duration (float (/ (- (get-internal-real-time) t1) internal-time-units-per-second))))
         (format t "~%--------- ~a seconds for ~a inserts: ~a inserts/sec.~%"
                 duration (length results) (/ (length results)
