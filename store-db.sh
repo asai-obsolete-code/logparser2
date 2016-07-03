@@ -22,6 +22,7 @@ copy_to_ram (){
 }
 copy_from_ram (){
     rsync -rL --exclude="*.err" --exclude="*.out" /run/shm/$1 $1
+    rm -r /run/shm/$1
 }
 
 main (){
