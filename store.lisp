@@ -165,9 +165,15 @@
               nil)))
 
 (defun parse (file pathname-parser)
-  (apply #'reinitialize-instance
-         (apply #'ensure-dao (funcall pathname-parser file))
-         (parse-output file)))
+  (handler-case
+      (apply #'reinitialize-instance
+             (apply #'ensure-dao (funcall pathname-parser file))
+             (parse-output file))
+    (error (c)
+      (format *error-output* "Error while parsing file: ~a" file)
+      (pprint-logical-block (*error-output* nil :prefix decoration)
+        (pprint-indent :block 2)
+        (describe c)))))
 
 (defun parse-output (file)
   (let ((*local* (make-hash-table)))
@@ -193,13 +199,6 @@
                                           `(ensure-dao ',x :name ,x)
                                           x)))
                     args)))
-
-(defun call-with-error-decoration (decoration fn)
-  (handler-bind ((error (lambda (c)
-                          (pprint-logical-block (*error-output* nil :prefix decoration)
-                            (pprint-indent :block 2)
-                            (signal c)))))
-    (funcall fn)))
 
 (defun set-pragma ()
   (mito.logger:with-sql-logging

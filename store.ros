@@ -51,11 +51,9 @@ exec ros -Q -- $0 "$@"
   (mapcar #'ensure-table-exists '(tag domain algorithm heuristics fig2 fig3))
   (setf *kernel* (make-kernel 8))
   (let ((t1 (get-internal-real-time)))
-    (let ((results (time (pmapcar (lambda (file)
-                                    (call-with-error-decoration
-                                     (format nil "~&while parsing metadata for ~a:" file)
-                                     (lambda () (parse (pathname file) #'parse-pathname))))
-                                  files))))
+    (let ((results (remove nil (time (pmapcar (lambda (file)
+                                                (parse (pathname file) #'parse-pathname))
+                                              files)))))
       (time
        (with-transaction *connection*
          (map nil #'update-dao results)))
