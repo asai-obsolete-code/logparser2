@@ -26,11 +26,4 @@ benchmark: store.bin
 	@echo re-insertion
 	time bash -c 'find -L -name "*.out" | xargs ./store.bin'
 
-ramdisk:
-	sudo mkdir -p /ramdisk
-	sudo mount -t ramfs none /ramdisk
-	sudo chmod 777 /ramdisk
 
-clean-ramdisk:
-	-sudo umount /ramdisk
-	-sudo rmdir  /ramdisk
