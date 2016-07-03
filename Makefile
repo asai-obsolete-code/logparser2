@@ -17,7 +17,7 @@ db.sqlite: store.bin
 	./store-db.sh
 
 clean:
-	-rm *.sqlite *~
+	-rm *.sqlite *~ *.backup
 distclean: clean
 	-rm *.bin
 
