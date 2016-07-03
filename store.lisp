@@ -166,7 +166,7 @@
 
 (defun parse (file pathname-parser)
   (apply #'reinitialize-instance
-         (apply #'ensure-dao/write (funcall pathname-parser file))
+         (apply #'ensure-dao (funcall pathname-parser file))
          (parse-output file)))
 
 (defun parse-output (file)

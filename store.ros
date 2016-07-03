@@ -58,7 +58,7 @@ exec ros -Q -- $0 "$@"
                                   files))))
       (time
        (with-transaction *connection*
-         (map nil #'save-dao results)))
+         (map nil #'update-dao results)))
       (let ((duration (float (/ (- (get-internal-real-time) t1) internal-time-units-per-second))))
         (format t "~%--------- ~a seconds for ~a inserts: ~a inserts/sec.~%"
                 duration (length results) (/ (length results) duration))))))
