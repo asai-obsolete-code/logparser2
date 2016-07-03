@@ -14,7 +14,7 @@ pull:
 db: db.sqlite
 
 db.sqlite: store.bin
-	find -L -name "*.out" | xargs ./store.bin 
+	./store-db.sh
 
 clean:
 	-rm *.sqlite *~
