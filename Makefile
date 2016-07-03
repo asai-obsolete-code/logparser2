@@ -16,6 +16,7 @@ db: store.bin
 
 clean:
 	-rm *.sqlite *~ *.backup
+	-find -name "*.parsed" -delete
 distclean: clean
 	-rm *.bin
 
