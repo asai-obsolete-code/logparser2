@@ -12,7 +12,7 @@ pull:
 	mv $(basename $@) $@
 
 db: store.bin
-	./store-db.sh
+	./store-db.sh 2>&1 | tee log
 
 clean:
 	-rm *.sqlite *~ *.backup
