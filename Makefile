@@ -1,7 +1,7 @@
 
 $(info $(shell git pull))
 
-.PHONY: pull db ramdisk distclean clean graph
+.PHONY: pull db ramdisk distclean clean graph plot-clean
 all: store.bin
 
 pull:
@@ -33,7 +33,9 @@ dropbox = ~/Dropbox/FukunagaLabShare/OngoingWorks/Asai/$(notdir $(CURDIR))/
 	ros $<
 	touch $@
 
-plot: plot-kmacro.plot plot-allmacro.plot plot-allmacro-domain.plot plot-kmacro-domain.ros
+plot: plot-kmacro.plot plot-allmacro.plot plot-allmacro-domain.plot plot-kmacro-domain.plot
 	mkdir -p $(dropbox)
 	rsync -raz --delete evaluation generation expansion $(dropbox)
 
+plot-clean:
+	 -rm -r *.plot evaluation generation expansion
