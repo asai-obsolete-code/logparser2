@@ -27,7 +27,12 @@ benchmark: store.bin
 	@echo re-insertion
 	time bash -c 'find -L -name "*.out" | xargs ./store.bin'
 
+dropbox = ~/Dropbox/FukunagaLabShare/OngoingWorks/Asai/$(notdir $(CURDIR))/
 
-graph: plot-kmacro.ros plot-allmacro.ros
-	./plot-kmacro.ros
-	./plot-allmacro.ros
+%.plot: %.ros plot-common.lisp db.sqlite
+	ros $<
+
+plot: plot-kmacro.plot plot-allmacro.plot
+	mkdir -p $(dropbox)
+	rsync -raz --delete evaluation generation expansion $(dropbox)
+

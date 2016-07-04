@@ -5,46 +5,9 @@ exec ros -Q -- $0 "$@"
 |#
 
 (load "common.lisp")
+(load "plot-common.lisp")
 (in-package :ros.script.plot)
 (cl-syntax:use-syntax :cl-interpol)
-
-(defun correct (num)
-  (if (plusp num)
-      num
-      10e8))
-
-(defun setup (title path)
-  (ensure-directories-exist path :verbose t)
-  (gp-setup :terminal '(:pdf :enhanced :size (5.5 3.6)
-                        :dashed
-                        ;; :background :rgb "gray80"
-                        ;; :monochrome
-                        :font "Times New Roman, 12")
-            :size :square
-            :view '(:equal :xy)
-            :output path
-            :pointsize 0.45
-            :logscale :xy
-            :format '(xy "10^%T")
-            :title title
-            :xlabel "Without Macro"
-            :ylabel "With Macro"))
-
-(defun db-symbol-id (name from)
-  (second
-   (first
-    (retrieve-by-sql
-     (select :id
-       (from from)
-       (where (:= :name name)))))))
-
-(defun db-symbol-name (id from)
-  (second
-   (first
-    (retrieve-by-sql
-     (select :name
-       (from from)
-       (where (:= :id id)))))))
 
 (defun main (&rest args)
   (declare (ignorable args))
@@ -53,12 +16,14 @@ exec ros -Q -- $0 "$@"
     (iter (with base = (db-symbol-id "base" :tag))
           (with macro = (db-symbol-id "macro" :tag))
           (for measure in '(:evaluation :expansion :generation))
-          (iter (for alg-h in
+          (iter (for config in
                      (retrieve-by-sql
                       (select (:algorithm_id :heuristics_id)
                         (from :fig2)
                         (group-by :algorithm_id :heuristics_id))))
-                (match alg-h
+                (for improved = nil)
+                (for sum-improved = nil)
+                (match config
                   ((list _ alg _ h)
                    (when-let ((data (retrieve-by-sql
                                      (select (list (make-keyword (symbolicate :base. measure))
@@ -73,12 +38,41 @@ exec ros -Q -- $0 "$@"
                                               (:= :macro.algorithm_id alg)
                                               (:= :base.tag_id base)
                                               (:= :macro.tag_id macro)))))))
-                     (with-plots (s)
-                       (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
-                              #?"${measure}/all-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}.pdf")
-                       (plot "x" :title "y=x")
-                       (plot (lambda ()
-                               (iter (for (_2 x _3 y) in data)
-                                     (format s "~&~a ~a" (correct x) (correct y)))))))))))))
+                     (let ((count
+                            (count-if (lambda-match
+                                        ((list _ (and x (plus)) _ (and (plus) (< x))) t)) data))
+                           (both
+                            (count-if (lambda-match
+                                        ((list _ (and x (plus)) _ (plus)) t)) data))
+                           (nomacro
+                            (count-if (lambda-match
+                                        ((list _ (plus) _ (minus)) t)) data))
+                           (macro
+                            (count-if (lambda-match
+                                        ((list _ (minus) _ (plus)) t)) data))
+                           (sum-x
+                            (iter (for datum in data)
+                                  (match datum
+                                    ((list _ (and x (plus)) _ (plus)) (summing x)))))
+                           (sum-y
+                            (iter (for datum in data)
+                                  (match datum
+                                    ((list _ (plus) _ (and y (plus))) (summing y))))))
+                       (when (< both (* 2 count))
+                         (setf improved t))
+                       (when (< sum-y sum-x)
+                         (setf sum-improved t))
+                       (with-plots (s)
+                         (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
+                                #?"${measure}/all-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}.png"
+                                sum-improved)
+                         (plot "x" :title "y=x")
+                         (plot (lambda ()
+                                 (iter (for (_2 x _3 y) in data)
+                                       (format s "~&~a ~a" (correct x) (correct y))))
+                               :title (replace-newline #?"
+${(length data)} in total, solved by (both,nomacro,macro,none)=(${both},${nomacro},${macro},${(- (length data) both nomacro macro)})
+${measure} improved by macros in ${count}/${both} instances
+Sum of ${measure}: (nomacro,macro)=(${sum-x},${sum-y})")))))))))))
 
 
