@@ -1,7 +1,7 @@
 
 $(info $(shell git pull))
 
-.PHONY: pull db ramdisk distclean clean
+.PHONY: pull db ramdisk distclean clean graph
 all: store.bin
 
 pull:
@@ -28,3 +28,6 @@ benchmark: store.bin
 	time bash -c 'find -L -name "*.out" | xargs ./store.bin'
 
 
+graph: plot-kmacro.ros plot-allmacro.ros
+	./plot-kmacro.ros
+	./plot-allmacro.ros
