@@ -18,10 +18,7 @@ exec ros -Q -- $0 "$@"
                       (from :fig3 :domain)
                       (where (:and (:!= :tag_id base) (:= :fig3.domain_id :domain.id)))
                       (group-by :algorithm_id :heuristics_id :tag_id :domain.id))))
-              (in outer
-                  (collect
-                      (with-forced-lex (measure config)
-                        (future (task measure config))))))))
+              (task measure config))))
 
 (defun task (measure config &aux improved? sum-improved?)
   (match config

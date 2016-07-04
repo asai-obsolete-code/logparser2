@@ -51,9 +51,7 @@
 (defun main (&rest args)
   (declare (ignorable args))
   (my-connect "db.sqlite")
-  (setf *kernel* (make-kernel (read-from-string (uiop:run-program "grep processor /proc/cpuinfo | wc -l" :output :string))))
-  (mito.logger:with-sql-logging
-    (mapcar #'force (futures))))
+  (futures))
 
 (deftype data () 'list) 
 (defun data-p (data) (listp data))

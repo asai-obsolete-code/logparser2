@@ -17,10 +17,7 @@ exec ros -Q -- $0 "$@"
                     (select (:algorithm_id :heuristics_id)
                       (from :fig2)
                       (group-by :algorithm_id :heuristics_id))))
-              (in outer
-                  (collect
-                      (with-forced-lex (measure config)
-                        (future (task measure config))))))))
+              (task measure config))))
 
 (defun task (measure config &aux improved? sum-improved?)
   (match config
