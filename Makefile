@@ -1,7 +1,7 @@
 
 # $(info $(shell git pull))
 
-.PHONY: pull db ramdisk distclean clean addindex test
+.PHONY: pull db ramdisk distclean clean graph plot-clean addindex test
 
 all: store.bin
 
@@ -29,6 +29,18 @@ benchmark: store.bin
 	@echo re-insertion
 	time bash -c 'find -L -name "*.out" | xargs ./store.bin'
 
+dropbox = ~/Dropbox/FukunagaLabShare/OngoingWorks/Asai/$(notdir $(CURDIR))/
+
+%.plot: %.ros plot-common.lisp db.sqlite
+	ros dynamic-space-size=4000 $<
+	touch $@
+
+plot: $(patsubst %.ros,%.plot,$(wildcard plot*.ros))
+	mkdir -p $(dropbox)
+	rsync -raz --delete evaluation generation expansion $(dropbox)
+
+plot-clean:
+	 -rm -r *.plot evaluation* generation* expansion*
 
 addindex:
 	-sqlite3 db.sqlite "create index _fig2 on fig2 (problem,domain_id,heuristics_id,algorithm_id,tag_id)"

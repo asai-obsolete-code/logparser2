@@ -1,0 +1,69 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+
+(load "common.lisp")
+(load "plot-common.lisp")
+(in-package :ros.script.plot)
+(cl-syntax:use-syntax :cl-interpol)
+
+(defun futures ()
+  (iter outer
+        (for measure in '(:evaluation :expansion :generation))
+        (iter (for config in
+                   (retrieve-by-sql
+                      (select (:id :name)
+                        (from :algorithm)
+                        (where (:and (:!= :id (%id "probe" :algorithm))
+                                     (:!= :id (%id "mp" :algorithm))
+                                     (:!= :id (%id "tran" :algorithm)))))))
+              (handler-case
+                  (task measure config)
+                (error (c)
+                  (format *error-output*
+                          "~%Error during (task ~a ~a) : ~a" measure config c))))))
+
+(defun task (measure config &aux sum-improved?)
+  (match config
+    ((list _ alg _ aname)
+     (when-let ((data (retrieve-by-sql
+                       (select (list :heuristics.id
+                                     (make-keyword (symbolicate :base. measure))
+                                     :base.search
+                                     (make-keyword (symbolicate :macro. measure))
+                                     :macro.search)
+                         (from (:as :fig2 :base) (:as :fig2 :macro) :heuristics)
+                         (where
+                          (:and (:= :base.problem :macro.problem)
+                                (:= :base.domain_id :macro.domain_id)
+                                (:= :base.heuristics_id :macro.heuristics_id)
+                                (:= :base.heuristics_id :heuristics.id)
+                                (:= :base.algorithm_id alg)
+                                (:= :macro.algorithm_id alg)
+                                (:= :base.tag_id base)
+                                (:= :macro.tag_id (%id "macro" :tag))))
+                         (order-by :heuristics.id)))))
+       (with-plots (s)
+         (setup #?"${aname} ${measure}"
+                #?"${measure}-ratio/all-${aname}"
+                :spacing 0.8)
+         (iter outer
+               (while data)
+               (match (first data)
+                 ((list* _ h _)
+                  (plot (lambda ()
+                          (dolist (datum data)
+                            (match datum
+                                   ((list _ (= h)
+                                          _ value1 _ sec1
+                                          _ value2 _ sec2)
+                                    (when (every #'plusp (list value1 sec1 value2 sec2))
+                                      (format s "~&~a ~a" (/ value1 sec1) (/ value2 sec2)))
+                                    (pop data))
+                                   (_ (in outer (next-iteration))))))
+                        :title (replace-newline #?"${(%n h :heuristics)} ${measure}/sec")))))
+         (plot "x" :title "y=x"))))))
+
+

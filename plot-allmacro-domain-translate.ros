@@ -1,0 +1,119 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+
+(load "common.lisp")
+(load "plot-common.lisp")
+(in-package :ros.script.plot)
+(cl-syntax:use-syntax :cl-interpol)
+(declaim (optimize (debug 3) (speed 0)))
+
+(defun +-random (x)
+  (- (random x) (/ x 2)))
+
+(defun task (&aux (measure :wall)
+               (alg (%id "tran" :algorithm))
+               (h (%id "tran" :heuristics))
+               (base base)
+               (macro (%id "macro" :tag)))
+  (with-plots (s)
+    (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
+           #?"${measure}/all-domain-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}"
+           :spacing 0.8)
+    (when-let ((data (retrieve-by-sql
+                      (select (list (make-keyword (symbolicate :base. measure))
+                                    (make-keyword (symbolicate :macro. measure))
+                                    :domain.id
+                                    :domain.name)
+                        (from (:as :fig2 :base) (:as :fig2 :macro) :domain)
+                        (where
+                         (:and (:= :base.problem :macro.problem)
+                               (:= :base.domain_id :macro.domain_id)
+                               (:= :base.domain_id :domain.id)
+                               (:= :base.heuristics_id h)
+                               (:= :macro.heuristics_id h)
+                               (:= :base.algorithm_id alg)
+                               (:= :macro.algorithm_id alg)
+                               (:= :base.tag_id base)
+                               (:= :macro.tag_id macro)))
+                        (order-by :domain.id)))))
+      (iter outer
+            (while data)
+            (match data
+              ((list* (list (@@ 4 _)
+                            _ d _ dname) _)
+               (plot (lambda ()
+                       (iter (for datum in data)
+                             (match datum
+                               ((list* _ x _ y _ (= d) _)
+                                (when (and (plusp x) (plusp y))
+                                  (format s "~&~a ~a" (correct x) (correct y)))
+                                (pop data))
+                               (_
+                                (in outer (next-iteration))))))
+                     :title dname)))))
+    (plot "x" :title "y=x")))
+
+(defun task2 (length
+              &aux (measure :wall)
+                (alg (%id "tran" :algorithm))
+                (h (%id "tran" :heuristics))
+                (base base)
+                (macro (%id "mangle" :tag)))
+  (with-plots (s)
+    (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
+           #?"${measure}/${length}/all-domain-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}"
+           :spacing 0.8)
+    (gp :set :pointsize 0.05)
+    ;; (gp :unset :key)
+    (gp :set :xrange :|[0.8:1000]|)
+    (gp :set :yrange :|[0.8:1000]|)
+    (plot "x" :title "y=x")
+    ;; (plot "2*x" :title "y=2x")
+    (plot "3*x" :title "y=3x")
+    (when-let ((data (retrieve-by-sql
+                      (select (list (make-keyword (symbolicate :base. measure))
+                                    (make-keyword (symbolicate :macro. measure))
+                                    :domain.id
+                                    :domain.name)
+                        (from (:as :fig2 :base) (:as :fig3 :macro) :domain)
+                        (where
+                         (:and (:= :base.problem :macro.problem)
+                               (:= :base.domain_id :macro.domain_id)
+                               (:= :base.domain_id :domain.id)
+                               (:= :base.heuristics_id h)
+                               (:= :macro.heuristics_id h)
+                               (:= :base.algorithm_id alg)
+                               (:= :macro.algorithm_id alg)
+                               (:= :base.tag_id base)
+                               (:= :macro.tag_id macro)
+                               (:= :macro.length length)))
+                        (order-by :domain.id)))))
+      (iter outer
+            (while data)
+            (match data
+              ((list* (list (@@ 4 _)
+                            _ d _ dname) _)
+               (plot (lambda ()
+                       (iter (for datum in data)
+                             (match datum
+                               ((list* _ x _ y _ (= d) _)
+                                (;progn
+                                  when (and (plusp x) (plusp y))
+                                  (format s "~&~a ~a"
+                                          (+ (+-random 0.4) (correct x))
+                                          (+ (+-random 0.4) (correct y))))
+                                (pop data))
+                               (_
+                                (in outer (next-iteration))))))
+                     :notitle '()
+                     )))))))
+
+(defun futures ()
+  (task)
+  (iter (for length in '(2 5 8))
+        (task2 length)))
+
+

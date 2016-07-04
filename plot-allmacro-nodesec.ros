@@ -1,0 +1,59 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+
+(load "common.lisp")
+(load "plot-common.lisp")
+(in-package :ros.script.plot)
+(cl-syntax:use-syntax :cl-interpol)
+
+(defun futures ()
+  (iter outer
+        (for measure in '(:evaluation :expansion :generation))
+        (iter (for config in
+                   (retrieve-by-sql
+                      (select (:algorithm_id :heuristics_id)
+                        (from :fig2)
+                        (where (:and (:!= :algorithm_id (%id "tran" :algorithm))))
+                        (group-by :algorithm_id :heuristics_id))))
+              (handler-case
+                  (task measure config)
+                (error (c)
+                  (format *error-output*
+                          "~%Error during (task ~a ~a) : ~a" measure config c))))))
+
+(defun task (measure config &aux sum-improved?)
+  (match config
+    ((list _ alg _ h)
+     (when-let ((data (retrieve-by-sql
+                       (select (list (make-keyword (symbolicate :base. measure))
+                                     :base.search
+                                     (make-keyword (symbolicate :macro. measure))
+                                     :macro.search)
+                         (from (:as :fig2 :base) (:as :fig2 :macro))
+                         (where
+                          (:and (:= :base.problem :macro.problem)
+                                (:= :base.domain_id :macro.domain_id)
+                                (:= :base.heuristics_id h)
+                                (:= :macro.heuristics_id h)
+                                (:= :base.algorithm_id alg)
+                                (:= :macro.algorithm_id alg)
+                                (:= :base.tag_id base)
+                                (:= :macro.tag_id (%id "macro" :tag))))))))
+       (with-plots (s)
+         (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
+                #?"${measure}-ratio/all-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}"
+                :spacing 0.8)
+         (plot (lambda ()
+                 (mapc (lambda-match
+                         ((list _ value1 _ sec1
+                                _ value2 _ sec2)
+                          (when (every #'plusp (list value1 sec1 value2 sec2))
+                            (format s "~&~a ~a" (/ value1 sec1) (/ value2 sec2)))))
+                       data))
+               :title (replace-newline #?"${measure}/sec"))
+         (plot "x" :title "y=x"))))))
+
+
