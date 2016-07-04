@@ -14,10 +14,10 @@ exec ros -Q -- $0 "$@"
         (for measure in '(:evaluation :expansion :generation))
         (iter (for config in
                    (retrieve-by-sql
-                    (select (:algorithm_id :heuristics_id :tag_id)
-                      (from :fig3)
-                      (where (:!= :tag_id (%id "base" :tag)))
-                      (group-by :algorithm_id :heuristics_id :tag_id))))
+                    (select (:algorithm_id :heuristics_id :tag_id :domain.id :domain.name)
+                      (from :fig3 :domain)
+                      (where (:and (:!= :tag_id base) (:= :fig3.domain_id :domain.id)))
+                      (group-by :algorithm_id :heuristics_id :tag_id :domain.id))))
               (in outer
                   (collect
                       (with-forced-lex (measure config)
@@ -25,7 +25,7 @@ exec ros -Q -- $0 "$@"
 
 (defun task (measure config &aux improved? sum-improved?)
   (match config
-    ((list _ alg _ h _ tag)
+    ((list _ alg _ h _ tag _ d _ dname)
      (when-let
          ((plotters
            (iter (for length in '(2 5 8))
@@ -36,31 +36,28 @@ exec ros -Q -- $0 "$@"
                                      (where
                                       (:and (:= :base.problem :macro.problem)
                                             (:= :base.domain_id :macro.domain_id)
+                                            (:= :base.domain_id d)
                                             (:= :base.heuristics_id h)
                                             (:= :macro.heuristics_id h)
                                             (:= :base.algorithm_id alg)
                                             (:= :macro.algorithm_id alg)
-                                            (:= :base.tag_id (%id "base" :tag))
+                                            (:= :base.tag_id base)
                                             (:= :macro.tag_id tag)
                                             (:= :macro.length length)))))))
-                   (with-forced-lex (length)
-                     (match data
-                       ((data improved both nomacro macro sum-x sum-y)
-                        (when (< both (* 2 improved)) (setf improved? t))
-                        (when (< sum-y sum-x) (setf sum-improved? t))
-                        (collect
-                            (lambda ()
-                              (plot (lambda ()
-                                      (iter (for (_2 x _3 y) in data)
-                                            (format *stream* "~&~a ~a" (correct x) (correct y))))
-                                    :title (replace-newline #?"L=${length}:
-${(length data)} in total, solved by (both,nomacro,macro,none)=(${both},${nomacro},${macro},${(- (length data) both nomacro macro)})
-${measure} improved by macros in ${improved}/${both} instances
-Sum of ${measure}: (nomacro,macro)=(${sum-x},${sum-y})")))))))))))
+                   (match data
+                     ((data improved both sum-x sum-y)
+                      (when (< both (* 2 improved)) (setf improved? t))
+                      (when (< sum-y sum-x) (setf sum-improved? t))
+                      (collect
+                          (lambda ()
+                            (plot (lambda ()
+                                    (iter (for (_2 x _3 y) in data)
+                                          (format *stream* "~&~a ~a" (correct x) (correct y))))
+                                  :title dname)))))))))
        (handler-case
            (with-plots (*stream*)
              (setup #?"${(%n alg :algorithm)} ${(%n h :heuristics)} ${measure} ${(%n tag :tag)}"
-                    #?"${measure}/${(%n tag :tag)}-${(%n alg :algorithm)}-${(%n h :heuristics)}.svg"
+                    #?"${measure}/${dname}/${(%n tag :tag)}-${(%n alg :algorithm)}-${(%n h :heuristics)}.svg"
                     sum-improved?)
              (plot "x" :title "y=x")
              (mapcar #'funcall plotters))

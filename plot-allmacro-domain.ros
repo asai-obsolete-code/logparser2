@@ -1,0 +1,64 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+
+(load "common.lisp")
+(load "plot-common.lisp")
+(in-package :ros.script.plot)
+(cl-syntax:use-syntax :cl-interpol)
+
+(defun futures ()
+  (iter outer
+        (for measure in '(:evaluation :expansion :generation))
+        (iter (for config in
+                   (retrieve-by-sql
+                    (select (:algorithm_id :heuristics_id)
+                      (from :fig2)
+                      (group-by :algorithm_id :heuristics_id))))
+              (in outer
+                  (collect
+                      (with-forced-lex (measure config)
+                        (future (task measure config))))))))
+
+(defun task (measure config &aux improved? sum-improved?)
+  (match config
+    ((list _ alg _ h)
+     (with-plots (s)
+       (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
+              #?"${measure}/all-domain-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}.svg"
+              t 1)
+       (plot "x" :title "y=x")
+       (iter (for %d in (retrieve-by-sql (select :* (from :domain))))
+             (match %d
+               ((list :id d :name dname)
+                (when-let ((data (retrieve-by-sql
+                                  (select (list (make-keyword (symbolicate :base. measure))
+                                                (make-keyword (symbolicate :macro. measure)))
+                                    (from (:as :fig2 :base) (:as :fig2 :macro))
+                                    (where
+                                     (:and (:= :base.problem :macro.problem)
+                                           (:= :base.domain_id :macro.domain_id)
+                                           (:= :base.domain_id d)
+                                           (:= :base.heuristics_id h)
+                                           (:= :macro.heuristics_id h)
+                                           (:= :base.algorithm_id alg)
+                                           (:= :macro.algorithm_id alg)
+                                           (:= :base.tag_id base)
+                                           (:= :macro.tag_id (%id "macro" :tag))))))))
+                  (match data
+                    ((data improved both sum-x sum-y)
+                     (when (< both (* 2 improved)) (setf improved? t))
+                     (when (< sum-y sum-x) (setf sum-improved? t))
+                     (plot (lambda ()
+                             (iter (for (_2 x _3 y) in data)
+                                   (format s "~&~a ~a" (correct x) (correct y))))
+                           :title dname
+                           ;; (replace-newline #?"
+                           ;; ${dname}:(total,both,nomacro,macro,none)=(${(length data)},${both},${nomacro},${macro},${(- (length data) both nomacro macro)})
+                           ;; ${measure} improved by macros in ${count}/${both} instances
+                           ;; Sum of ${measure}: (nomacro,macro)=(${sum-x},${sum-y})")
+                           )))))))))))
+
+
