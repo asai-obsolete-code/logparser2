@@ -33,7 +33,7 @@ dropbox = ~/Dropbox/FukunagaLabShare/OngoingWorks/Asai/$(notdir $(CURDIR))/
 	ros $<
 	touch $@
 
-plot: plot-kmacro.plot plot-allmacro.plot plot-allmacro-domain.plot plot-kmacro-domain.plot plot-allmacro-nodesec.plot
+plot: $(patsubst %.ros,%.plot,$(wildcard *.ros))
 	mkdir -p $(dropbox)
 	rsync -raz --delete evaluation generation expansion $(dropbox)
 
