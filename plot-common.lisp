@@ -59,24 +59,24 @@
 (defun data-p (data) (listp data))
 (defun data-improved (data)
   (count-if (lambda-match
-              ((list _ (and x (plus)) _ (and (plus) (< x))) t)) data))
+              ((list* _ (and x (plus)) _ (and (plus) (< x)) _) t)) data))
 (defun data-both (data)
   (count-if (lambda-match
-              ((list _ (and x (plus)) _ (plus)) t)) data))
+              ((list* _ (and x (plus)) _ (plus) _) t)) data))
 (defun data-nomacro (data)
   (count-if (lambda-match
-              ((list _ (plus) _ (minus)) t)) data))
+              ((list* _ (plus) _ (minus) _) t)) data))
 (defun data-macro (data)
   (count-if (lambda-match
-              ((list _ (minus) _ (plus)) t)) data))
+              ((list* _ (minus) _ (plus) _) t)) data))
 (defun data-sum-x (data)
   (iter (for datum in data)
         (match datum
-          ((list _ (and x (plus)) _ (plus)) (summing x)))))
+          ((list* _ (and x (plus)) _ (plus) _) (summing x)))))
 (defun data-sum-y (data)
   (iter (for datum in data)
         (match datum
-          ((list _ (plus) _ (and y (plus))) (summing y)))))
+          ((list* _ (plus) _ (and y (plus)) _) (summing y)))))
 
 (defmacro with-forced-lex (bindings &body body)
   `(let ,(mapcar (lambda (x) (list x x)) bindings)
