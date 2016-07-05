@@ -1,5 +1,5 @@
 
-$(info $(shell git pull))
+# $(info $(shell git pull))
 
 .PHONY: pull db ramdisk distclean clean graph plot-clean
 all: store.bin
