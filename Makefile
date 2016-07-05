@@ -38,4 +38,4 @@ plot: $(patsubst %.ros,%.plot,$(wildcard *.ros))
 	rsync -raz --delete evaluation generation expansion $(dropbox)
 
 plot-clean:
-	 -rm -r *.plot evaluation generation expansion
+	 -rm -r *.plot evaluation* generation* expansion*
