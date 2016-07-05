@@ -41,7 +41,7 @@ exec ros -Q -- $0 "$@"
           (when (< sum-y sum-x) (setf sum-improved? t))
           (with-plots (s)
             (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
-                   #?"${measure}/all-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}.svg"
+                   #?"${measure}/all-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}"
                    sum-improved?)
             (plot "x" :title "y=x")
             (plot (lambda ()

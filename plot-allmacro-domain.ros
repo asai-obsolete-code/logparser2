@@ -24,7 +24,7 @@ exec ros -Q -- $0 "$@"
     ((list _ alg _ h)
      (with-plots (s)
        (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
-              #?"${measure}/all-domain-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}.svg"
+              #?"${measure}/all-domain-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}"
               t 1)
        (plot "x" :title "y=x")
        (iter (for %d in (retrieve-by-sql (select :* (from :domain))))

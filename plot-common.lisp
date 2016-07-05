@@ -6,8 +6,10 @@
 
 (defun setup (title path &optional (improved t) (spacing 8))
   (ensure-directories-exist path :verbose t)
-  (gp-setup :terminal `(:svg :enhanced
-                        :size #+pdf(5.5 3.6) (800 800)
+  (gp-setup :terminal `(:pngcairo :enhanced
+                        :size
+                        ;; (5.5 3.6)
+                        (800 800)
                         ;; :dashed
                         :background :rgb ,(if improved "white" "gray90")
                         ;; :monochrome
@@ -15,7 +17,7 @@
             :size :square
             :view '(:equal :xy)
             :key `(:bottom :right :spacing ,spacing)
-            :output path
+            :output (make-pathname :defaults path :type "png")
             :pointsize 0.45
             :logscale :xy
             :format '(xy "10^%T")

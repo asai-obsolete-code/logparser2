@@ -57,7 +57,7 @@ Sum of ${measure}: (nomacro,macro)=(${sum-x},${sum-y})")))))))))))
        (handler-case
            (with-plots (*stream*)
              (setup #?"${(%n alg :algorithm)} ${(%n h :heuristics)} ${measure} ${(%n tag :tag)}"
-                    #?"${measure}/${(%n tag :tag)}-${(%n alg :algorithm)}-${(%n h :heuristics)}.svg"
+                    #?"${measure}/${(%n tag :tag)}-${(%n alg :algorithm)}-${(%n h :heuristics)}"
                     sum-improved?)
              (plot "x" :title "y=x")
              (mapcar #'funcall plotters))
