@@ -1,0 +1,88 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+
+(load "common.lisp")
+(load "plot-common.lisp")
+(in-package :ros.script.plot)
+(cl-syntax:use-syntax :cl-interpol)
+
+(defmacro tprint (&body body)
+  `(print (time (progn ,@body))))
+
+(defun futures ()
+  #+nil
+  (tprint
+    (retrieve-by-sql
+     (select (:algorithm.id :heuristics.id :tag.id)
+             (from :algorithm :heuristics :tag)
+             (where (:and (:!= :tag_id (%id "base" :tag))
+                          (:or (:= :algorithm.id :heuristics.id)
+                               (:and (:!= :algorithm.id (%id "probe" :algorithm))
+                                     (:!= :algorithm.id (%id "mp" :algorithm)))))))))
+  (iter outer
+        (for measure in '(:evaluation :expansion :generation))
+        (iter (for config in
+                   (tprint
+                     (retrieve-by-sql
+                      (select (:algorithm_id :heuristics_id :tag_id)
+                              (from :fig3)
+                              (where (:!= :tag_id (%id "base" :tag)))
+                              (group-by :algorithm_id :heuristics_id :tag_id)))))
+              (iter (for length in '(2 5 8))
+                    (task measure config length)))))
+
+(defun task (measure config length)
+  (match config
+    ((list _ alg _ h _ tag)
+     (handler-case
+         (with-plots (*stream*)
+           (setup #?"${(%n alg :algorithm)} ${(%n h :heuristics)} ${measure} ${(%n tag :tag)}"
+                  #?"${measure}-sec/${length}/${(%n tag :tag)}-${(%n alg :algorithm)}-${(%n h :heuristics)}"
+                  t
+                  1)
+           (plot "x" :title "y=x")
+           (when-let ((data (retrieve-by-sql
+                             (select (list (make-keyword (symbolicate :base. measure))
+                                           :base.search
+                                           (make-keyword (symbolicate :macro. measure))
+                                           :macro.search
+                                           :domain.id
+                                           :domain.name)
+                               (from (:as :fig2 :base) (:as :fig3 :macro) :domain)
+                               (where
+                                (:and (:= :base.problem :macro.problem)
+                                      (:= :macro.domain_id :base.domain_id)
+                                      (:= :domain.id :base.domain_id)
+                                      (:= :base.heuristics_id h)
+                                      (:= :macro.heuristics_id h)
+                                      (:= :base.algorithm_id alg)
+                                      (:= :macro.algorithm_id alg)
+                                      (:= :base.tag_id base)
+                                      (:= :macro.tag_id tag)
+                                      (:= :macro.length length)))
+                               (order-by :domain.id)))))
+             (iter (while data)
+                   (plot (lambda ()
+                           (iter (with domain = nil)
+                                 (for d in data)
+                                 (match d
+                                   ((list* _ value1 _ sec1
+                                           _ value2 _ sec2 _ id _)
+                                    (when (or (null domain) (= id domain))
+                                      (setf domain id)
+                                      (when (every #'plusp (list value1 sec1 value2 sec2))
+                                        (format *stream* "~&~a ~a" (/ value1 sec1) (/ value2 sec2)))
+                                      (pop data)))
+                                   (_
+                                    (finish)))))
+                         :title
+                         (ematch (first data)
+                           ((list* (@@ 10 _) _ dname _)
+                            dname))))))
+       (uiop:subprocess-error ()
+         (format *error-output* #?"subprocess error at ${measure} ${config} ${length}"))))))
+
+
