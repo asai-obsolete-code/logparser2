@@ -13,14 +13,16 @@
                         ;; :dashed
                         :background :rgb ,(if improved "white" "gray90")
                         ;; :monochrome
-                        :font "Times New Roman, 12")
+                        :font "Times New Roman, 11")
             :size :square
             :view '(:equal :xy)
             :key `(:bottom :right :spacing ,spacing)
             :output (make-pathname :defaults path :type "png")
-            :pointsize 0.45
+            :pointsize 1
             :logscale :xy
             :format '(xy "10^%T")
+            :mxtics :default
+            :mytics :default
             :title title
             :xlabel "Without Macro"
             :ylabel "With Macro"))

@@ -13,7 +13,6 @@ exec ros -Q -- $0 "$@"
   `(print (time (progn ,@body))))
 
 (defun futures ()
-  (trace task)
   #+nil
   (tprint
     (retrieve-by-sql
