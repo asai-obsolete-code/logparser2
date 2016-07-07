@@ -73,7 +73,7 @@
    (heuristics :col-type heuristics :initarg :heuristics)
    ;;
    (search :col-type :float :initarg :search :initform -1)
-   ;; (wall :col-type :float :initarg :wall :initform -1)
+   (wall :col-type :integer :initarg :wall :initform -1)
    (memory :col-type :integer :initarg :memory :initform -1)
    ;;
    (expansion :col-type :integer :initarg :expansion :initform -1)

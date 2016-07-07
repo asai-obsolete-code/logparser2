@@ -76,6 +76,11 @@
     ((ppcre "total time ([.0-9]*)" (read num))
      num)))
 
+(defparser wall (line)
+  (match line
+    ((ppcre "Wall time: ([.0-9]*) sec" (read num))
+     num)))
+
 (defparser generation (line)
   (match line
     ((ppcre "Generated ([0-9]*) state" (read num))
