@@ -18,7 +18,7 @@ exec ros -Q -- $0 "$@"
                                 (split* "-" (ipcyear ipcyear) _)
                                 domain)
                :name      (split* "\\." (problem problem)
-                                  (ppcre "(..1)([el])([0-9]*)" heuristics algorithm (read seed)) _))
+                                  (ppcre "(..1)([el]p?)([0-9]*)" heuristics algorithm (read seed)) _))
      (list* 'fig3 (initargs tag domain problem ipcyear heuristics algorithm length seed)))
     ;; mp, probe
     ((pathname :directory (last 3
@@ -34,7 +34,7 @@ exec ros -Q -- $0 "$@"
                                 (split* "-" (ipcyear ipcyear) _)
                                 domain)
                :name      (split* "\\." (problem problem)
-                                  (ppcre "(..1)([el])" heuristics algorithm) _))
+                                  (ppcre "(..1)([el]p?)" heuristics algorithm) _))
      (list* 'fig2 (initargs tag domain problem ipcyear heuristics algorithm)))
     ((pathname :directory (last 3
                                 (split "-" "fig2" tag)
