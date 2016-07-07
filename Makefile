@@ -39,3 +39,6 @@ plot: $(patsubst %.ros,%.plot,$(wildcard *.ros))
 
 plot-clean:
 	 -rm -r *.plot evaluation* generation* expansion*
+
+test:
+	./test.sh
