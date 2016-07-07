@@ -191,17 +191,21 @@
 (defun parse-output (file)
   (let ((*local* (make-hash-table)))
     (append (iter outer
+                  (with h = (copy-hash-table *parser-table*))
                   (for line in-file file using #'read-line)
-                  (iter (for (key fn) in-hashtable *parser-table*)
-                        (in outer
-                            (when-let ((it (funcall fn line)))
+                  (iter (for (key fn) in-hashtable h)
+                        (when-let ((it (funcall fn line)))
+                          (remhash key h)
+                          (in outer
                               (collect (make-keyword key))
                               (collect it)))))
             (iter outer
+                  (with h = (copy-hash-table *eparser-table*))
                   (for line in-file (make-pathname :type "err" :defaults file) using #'read-line)
-                  (iter (for (key fn) in-hashtable *eparser-table*)
-                        (in outer
-                            (when-let ((it (funcall fn line)))
+                  (iter (for (key fn) in-hashtable h)
+                        (when-let ((it (funcall fn line)))
+                          (remhash key h)
+                          (in outer
                               (collect (make-keyword key))
                               (collect it)))))
             (hash-table-plist *local*))))
