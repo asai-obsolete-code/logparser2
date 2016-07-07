@@ -41,7 +41,7 @@ exec ros -Q -- $0 "$@"
                                 (split* "-" (ipcyear ipcyear) _)
                                 domain)
                :name      (split* "\\." (problem problem)
-                                  (ppcre "(mp|probe)" algorithm) _))
+                                  (ppcre "(mp|probe|tran)" algorithm) _))
      (let ((heuristics algorithm))
        (list* 'fig2 (initargs tag domain problem ipcyear heuristics algorithm))))))
 
