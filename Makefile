@@ -45,5 +45,5 @@ test:
 	./test.sh
 
 addindex:
-	sqlite3 db.sqlite "create index _fig2 on fig2 (problem,domain_id,heuristics_id,algorithm_id,tag_id)"
-	sqlite3 db.sqlite "create index _fig3 on fig3 (problem,domain_id,heuristics_id,algorithm_id,tag_id)"
+	-sqlite3 db.sqlite "create index _fig2 on fig2 (problem,domain_id,heuristics_id,algorithm_id,tag_id)"
+	-sqlite3 db.sqlite "create index _fig3 on fig3 (problem,domain_id,heuristics_id,algorithm_id,tag_id)"
