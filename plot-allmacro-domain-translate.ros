@@ -43,7 +43,8 @@ exec ros -Q -- $0 "$@"
                      (when (< sum-y sum-x) (setf sum-improved? t))
                      (plot (lambda ()
                              (iter (for (_2 x _3 y) in data)
-                                   (format s "~&~a ~a" (correct x) (correct y))))
+                                   (when (and (plusp x) (plusp y))
+                                     (format s "~&~a ~a" (correct x) (correct y)))))
                            :title dname
                            ;; (replace-newline #?"
                            ;; ${dname}:(total,both,nomacro,macro,none)=(${(length data)},${both},${nomacro},${macro},${(- (length data) both nomacro macro)})
