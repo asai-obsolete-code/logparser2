@@ -6,26 +6,27 @@
 
 (defun setup (title path &optional (improved t) (spacing 8))
   (ensure-directories-exist path :verbose t)
-  (gp-setup :terminal `(:pngcairo :enhanced
-                        :size
-                        ;; (5.5 3.6)
-                        (800 800)
-                        ;; :dashed
-                        :background :rgb ,(if improved "white" "gray90")
-                        ;; :monochrome
-                        :font "Times New Roman, 11")
-            :size :square
-            :view '(:equal :xy)
-            :key `(:bottom :right :spacing ,spacing)
-            :output (make-pathname :defaults path :type "png")
-            :pointsize 1
-            :logscale :xy
-            :format '(xy "10^%T")
-            :mxtics :default
-            :mytics :default
-            :title title
-            :xlabel "Without Macro"
-            :ylabel "With Macro"))
+  (let ((terminal :pdf))
+    (gp-setup :terminal `(,terminal :enhanced
+                                    :size
+                                    (5.5 3.6)
+                                    ;; (800 800)
+                                    ;; :dashed
+                                    :background :rgb ,(if improved "white" "gray90")
+                                    ;; :monochrome
+                                    :font "Times New Roman, 11")
+              :size :square
+              :view '(:equal :xy)
+              :key `(:bottom :right :spacing ,spacing)
+              :output (make-pathname :defaults path :type (string-downcase terminal))
+              :pointsize 1
+              :logscale :xy
+              :format '(xy "10^%T")
+              :mxtics :default
+              :mytics :default
+              :title title
+              :xlabel "Without Macro"
+              :ylabel "With Macro")))
 
 (defun db-symbol-id (name from)
   (second
