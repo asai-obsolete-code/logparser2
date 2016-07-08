@@ -34,7 +34,7 @@ exec ros -Q -- $0 "$@"
               (iter (for length in '(2 5 8))
                     (task measure config length)))))
 
-(defun task (measure config length &aux improved? sum-improved?)
+(defun task (measure config &aux improved? sum-improved? (base base) (macro (%id "macro" :tag)))
   (match config
     ((list _ alg _ h _ tag)
      (handler-case
@@ -62,21 +62,20 @@ exec ros -Q -- $0 "$@"
                                       (:= :macro.tag_id tag)
                                       (:= :macro.length length)))
                                (order-by :domain.id)))))
-             (iter (while data)
-                   (plot (lambda ()
-                           (iter (for d in data)
-                                 (for dp previous d)
-                                 (match* (d dp)
-                                   (((list* _ x _ y _ id1 _)
-                                     (or nil (list* _ _ _ _ _ (= id1) _ _)))
-                                    (format *stream* "~&~a ~a" (correct x) (correct y))
-                                    (pop data))
-                                   (_
-                                    (finish)))))
-                         :title
-                         (ematch (first data)
-                           ((list* _ _ _ _ _ _ _ dname _)
-                            dname))))))
+             (iter outer
+                   (while data)
+                   (match data
+                     ((list* (list (@@ 4 _)
+                                   _ d _ dname) _)
+                      (plot (lambda ()
+                              (iter (for datum in data)
+                                    (match datum
+                                      ((list* _ x _ y _ (= d) _)
+                                       (format s "~&~a ~a" (correct x) (correct y))
+                                       (pop data))
+                                      (_
+                                       (in outer (next-iteration))))))
+                            :title dname))))))
        (uiop:subprocess-error ()
          (format *error-output* #?"subprocess error at ${measure} ${config} ${length}"))))))
 
