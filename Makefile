@@ -31,7 +31,7 @@ benchmark: store.bin
 dropbox = ~/Dropbox/FukunagaLabShare/OngoingWorks/Asai/$(notdir $(CURDIR))/
 
 %.plot: %.ros plot-common.lisp db.sqlite
-	ros $<
+	ros dynamic-space-size=4000 $<
 	touch $@
 
 plot: $(patsubst %.ros,%.plot,$(wildcard plot*.ros))
