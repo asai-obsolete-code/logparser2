@@ -13,6 +13,7 @@ pull:
 
 db: store.bin
 	./store-db.sh 2>&1 | tee log
+	$(MAKE) addindex
 
 clean:
 	-rm *.sqlite *~ *.backup
