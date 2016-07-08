@@ -34,7 +34,7 @@ exec ros -Q -- $0 "$@"
               (iter (for length in '(2 5 8))
                     (task measure config length)))))
 
-(defun task (measure config &aux improved? sum-improved? (base base) (macro (%id "macro" :tag)))
+(defun task (measure config length &aux improved? sum-improved? (base base) (macro (%id "macro" :tag)))
   (match config
     ((list _ alg _ h _ tag)
      (handler-case
@@ -71,7 +71,7 @@ exec ros -Q -- $0 "$@"
                               (iter (for datum in data)
                                     (match datum
                                       ((list* _ x _ y _ (= d) _)
-                                       (format s "~&~a ~a" (correct x) (correct y))
+                                       (format *stream* "~&~a ~a" (correct x) (correct y))
                                        (pop data))
                                       (_
                                        (in outer (next-iteration))))))
