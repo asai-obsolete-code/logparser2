@@ -45,21 +45,28 @@ exec ros -Q -- $0 "$@"
      (let ((heuristics algorithm))
        (list* 'fig2 (initargs tag domain problem ipcyear heuristics algorithm))))))
 
+(defun task (file queue)
+  (let ((parsed (parse (pathname file) #'parse-pathname)))
+    (push-queue parsed queue)))
+
 (defun main (&rest args)
   (declare (ignore args))
   (my-connect "db.sqlite")
   (set-pragma)
   (mapcar #'ensure-table-exists '(tag domain algorithm heuristics fig2 fig3))
   (setf *kernel* (make-kernel (read-from-string (uiop:run-program "grep processor /proc/cpuinfo | wc -l" :output :string))))
-  (let ((t1 (get-internal-real-time))
-        (channel (make-channel)))
-    (time
-     (map nil #'receive-result
+  (let* ((t1 (get-internal-real-time))
+         (channel (make-channel))
+         (queue (make-queue))
+         (total
           (iter (for file in-stream *standard-input* using #'read-line)
-                (submit-task channel (with-forced-lex (file)
-                                       (lambda ()
-                                         (update-dao (parse (pathname file) #'parse-pathname))))))))
+                (submit-task channel #'task file queue)
+                (counting t))))
+    (time (iter (repeat total) (receive-result channel)))
+    (time
+     (with-transaction *connection*
+       (iter (until (queue-empty-p queue))
+             (update-dao (pop-queue queue)))))
     (let ((duration (float (/ (- (get-internal-real-time) t1) internal-time-units-per-second))))
       (format t "~%--------- ~a seconds for ~a inserts: ~a inserts/sec.~%"
-              duration (length results) (/ (length results)
-                                           (max duration (/ internal-time-units-per-second)))))))
+              duration total (/ total (max duration (/ internal-time-units-per-second)))))))

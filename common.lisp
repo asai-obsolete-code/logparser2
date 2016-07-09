@@ -5,7 +5,8 @@
 (defpackage :ros.script.plot
   (:use :cl :eazy-gnuplot :iterate :alexandria :trivia :trivia.ppcre :mito :lparallel :sxql :dbi
         :recursive-restart
-        :cl-interpol))
+        :cl-interpol
+        :lparallel.queue))
 
 (in-package :ros.script.plot)
 
