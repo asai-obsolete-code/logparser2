@@ -44,7 +44,7 @@ exec ros -Q -- $0 "$@"
        (with-plots (s)
          (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
                 #?"${measure}-ratio/all-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}"
-                sum-improved?)
+                :spacing 0.8)
          (plot "x" :title "y=x")
          (plot (lambda ()
                  (mapc (lambda-match

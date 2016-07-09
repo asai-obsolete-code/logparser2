@@ -39,17 +39,22 @@ exec ros -Q -- $0 "$@"
          ((data improved both nomacro macro sum-x sum-y)
           (when (< both (* 2 improved)) (setf improved? t))
           (when (< sum-y sum-x) (setf sum-improved? t))
-          (with-plots (s)
-            (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
-                   #?"${measure}/all-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}"
-                   sum-improved?)
-            (plot "x" :title "y=x")
-            (plot (lambda ()
-                    (iter (for (_2 x _3 y) in data)
-                          (format s "~&~a ~a" (correct x) (correct y))))
-                  :title (replace-newline #?"
-${(length data)} in total, solved by (both,nomacro,macro,none)=(${both},${nomacro},${macro},${(- (length data) both nomacro macro)})
-${measure} improved by macros in ${improved}/${both} instances
-Sum of ${measure}: (nomacro,macro)=(${sum-x},${sum-y})")))))))))
+          (ignore-errors
+            (with-plots (s)
+              (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
+                     #?"${measure}/all-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}"
+                     :spacing 7)
+              (plot "x" :title "y=x")
+              (plot (lambda ()
+                      (map nil
+                           (lambda-match
+                            ((list _ x _ y)
+                             (when (and (plusp x) (plusp y))
+                               (format s "~&~a ~a" x y))))
+                           data))
+                    :title (replace-newline #?"${(length data)} in total, solved by
+(both,nomacro,macro,none)=(${both},${nomacro},${macro},${(- (length data) both nomacro macro)})
+${measure} improved by macros: ${improved}/${both}
+Sum of ${measure}: (nomacro,macro)=(${sum-x},${sum-y})"))))))))))
 
 

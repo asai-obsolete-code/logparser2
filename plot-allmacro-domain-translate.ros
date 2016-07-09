@@ -18,7 +18,7 @@ exec ros -Q -- $0 "$@"
      (with-plots (s)
        (setup #?"${(db-symbol-name alg :algorithm)} ${(db-symbol-name h :heuristics)} ${measure}"
               #?"${measure}/all-domain-${(db-symbol-name alg :algorithm)}-${(db-symbol-name h :heuristics)}"
-              t 1)
+              :spacing 0.8)
        (plot "x" :title "y=x")
        (when-let ((data (retrieve-by-sql
                          (select (list (make-keyword (symbolicate :base. measure))

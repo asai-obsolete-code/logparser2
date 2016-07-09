@@ -4,22 +4,22 @@
       num
       10e8))
 
-(defun setup (title path &optional (improved t) (spacing 8))
+(defun setup (title path &key (spacing 1))
   (ensure-directories-exist path :verbose t)
   (let ((terminal :pdf))
     (gp-setup :terminal `(,terminal :enhanced
                                     :size
-                                    (5.5 3.6)
+                                    (3.3 3.3)
                                     ;; (800 800)
                                     ;; :dashed
-                                    :background :rgb ,(if improved "white" "gray90")
+                                    ;; :background :rgb ,(if improved "white" "gray90")
                                     ;; :monochrome
                                     :font "Times New Roman, 11")
               :size :square
               :view '(:equal :xy)
-              :key `(:bottom :right :spacing ,spacing)
+              :key `(:bottom :right :spacing ,spacing :samplen 1)
               :output (make-pathname :defaults path :type (string-downcase terminal))
-              :pointsize 1
+              :pointsize 0.3
               :logscale :xy
               :format '(xy "10^%T")
               :mxtics :default

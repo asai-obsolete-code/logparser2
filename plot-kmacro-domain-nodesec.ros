@@ -41,8 +41,7 @@ exec ros -Q -- $0 "$@"
          (with-plots (*stream*)
            (setup #?"${(%n alg :algorithm)} ${(%n h :heuristics)} ${measure} ${(%n tag :tag)}"
                   #?"${measure}-ratio/${length}/${(%n tag :tag)}-${(%n alg :algorithm)}-${(%n h :heuristics)}"
-                  t
-                  1)
+                  :spacing 0.8)
            (plot "x" :title "y=x")
            (when-let ((data (retrieve-by-sql
                              (select (list (make-keyword (symbolicate :base. measure))
