@@ -28,7 +28,7 @@ copy_from_ram (){
 main (){
     trap "copy_from_ram $1" RETURN
     copy_to_ram $1
-    find -L /run/shm/$1 -name "*.out" | xargs ./store.bin
+    find -L /run/shm/$1 -name "*.out" | ./store.bin
 }
 
 for d in */
