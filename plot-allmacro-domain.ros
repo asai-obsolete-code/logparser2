@@ -53,7 +53,9 @@ exec ros -Q -- $0 "$@"
                           (iter (for datum in data)
                                 (match datum
                                   ((list* _ x _ y _ (= d) _)
-                                   (format s "~&~a ~a" (correct x) (correct y))
+                                   (format s "~&~a ~a"
+                                           (correct x (if (eq measure :search) 300 10e8))
+                                           (correct y (if (eq measure :search) 300 10e8)))
                                    (pop data))
                                   (_
                                    (in outer (next-iteration))))))

@@ -50,7 +50,9 @@ exec ros -Q -- $0 "$@"
                            (lambda-match
                             ((list _ x _ y)
                              (when (and (plusp x) (plusp y))
-                               (format s "~&~a ~a" x y))))
+                               (format s "~&~a ~a"
+                                       (correct x (if (eq measure :search) 300 10e8))
+                                       (correct y (if (eq measure :search) 300 10e8))))))
                            data))
                     :title (replace-newline #?"${(length data)} in total, solved by
 (both,nomacro,macro,none)=(${both},${nomacro},${macro},${(- (length data) both nomacro macro)})

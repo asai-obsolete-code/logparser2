@@ -23,7 +23,7 @@ exec ros -Q -- $0 "$@"
                                (:and (:!= :algorithm.id (%id "probe" :algorithm))
                                      (:!= :algorithm.id (%id "mp" :algorithm)))))))))
   (iter outer
-        (for measure in '(:evaluation :expansion :generation :search))
+        (for measure in '(:search :evaluation :expansion :generation))
         (iter (for config in
                    (tprint
                      (retrieve-by-sql
@@ -42,6 +42,7 @@ exec ros -Q -- $0 "$@"
            (setup #?"${(%n alg :algorithm)} ${(%n h :heuristics)} ${measure} ${(%n tag :tag)}"
                   #?"${measure}/${length}/${(%n tag :tag)}-${(%n alg :algorithm)}-${(%n h :heuristics)}"
                   :spacing 0.8)
+           (gp :set :pointsize 0.2)
            (when-let ((data (retrieve-by-sql
                              (select (list (make-keyword (symbolicate :base. measure))
                                            (make-keyword (symbolicate :macro. measure))
@@ -69,11 +70,16 @@ exec ros -Q -- $0 "$@"
                               (iter (for datum in data)
                                     (match datum
                                       ((list* _ x _ y _ (= d) _)
-                                       (format *stream* "~&~a ~a" (correct x) (correct y))
+                                       (case measure
+                                         (:search
+                                          (format *stream* "~&~a ~a" (max 1 (correct x 300)) (max 1 (correct y 300))))
+                                         (t
+                                          (when (and (plusp x) (plusp y))
+                                            (format *stream* "~&~a ~a" x y))))
                                        (pop data))
                                       (_
                                        (in outer (next-iteration))))))
-                            :title dname)))))
+                            :notitle nil)))))
            (plot "x" :title "y=x"))
        (uiop:subprocess-error ()
          (format *error-output* #?"subprocess error at ${measure} ${config} ${length}"))))))

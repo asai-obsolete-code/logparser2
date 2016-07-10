@@ -52,12 +52,16 @@ exec ros -Q -- $0 "$@"
                                            (lambda-match
                                             ((list _ x _ y)
                                              (when (and (plusp x) (plusp y))
-                                               (format *stream* "~&~a ~a" x y))))
+                                               (format *stream* "~&~a ~a"
+                                                       (correct x (if (eq measure :search) 300 10e8))
+                                                       (correct y (if (eq measure :search) 300 10e8))))))
                                            data))
                                     :title (replace-newline #?"L=${length}: ${(length data)} in total, solved by
  (both,nomacro,macro,none)=(${both},${nomacro},${macro},${(- (length data) both nomacro macro)})
 ${measure} improved by macros in ${improved}/${both} instances
-Sum of ${measure}: (nomacro,macro)=(${sum-x},${sum-y})")))))))))))
+Sum of ${measure}: (nomacro,macro)=(${sum-x},${sum-y})")
+                                    :with :points
+                                    :lw 0.01))))))))))
        (ignore-errors
            (with-plots (*stream*)
              (setup #?"${(%n alg :algorithm)} ${(%n h :heuristics)} ${measure} ${(%n tag :tag)}"
