@@ -33,5 +33,5 @@ main (){
 
 for d in */
 do
-    main $d || break
+    main $d
 done
