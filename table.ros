@@ -5,6 +5,7 @@ exec ros -Q -- $0 "$@"
 |#
 
 (load "common.lisp")
+(load "plot-common.lisp")
 (in-package :ros.script.plot)
 (cl-syntax:use-syntax :cl-interpol)
 (my-connect)
@@ -13,11 +14,16 @@ exec ros -Q -- $0 "$@"
   (my-connect "db.sqlite")
   (print (as-array (data))))
 
+(defun solved ()
+  (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date
+           (:as (:/ (:max :plan_length 0) :plan_length) :solved))
+    (from :experiment)
+    (group-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date)))
+
 (defun coverage ()
   (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date
-           (:as (:count :*) :coverage))
-    (from :experiment)
-    (where (:> :plan_length 0))
+           (:as (:sum :solved) :coverage))
+    (from (solved))
     (group-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date)))
 
 (defun samples-and-mean ()
@@ -28,7 +34,8 @@ exec ros -Q -- $0 "$@"
     (group-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id)))
 
 (defun mean-and-variance ()
-  (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id
+  (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :domain_id
+                         :ipcyear_id
                          :mean
                          (:as (:/ (:sum (:* (:- :coverage :mean)
                                             (:- :coverage :mean)))
@@ -59,3 +66,73 @@ exec ros -Q -- $0 "$@"
           (setf (apply #'aref table (mapcar #'1- dims))
                 (nthcdr (* 2 label-dim) datum)))
     table))
+
+;; :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :domain_id
+;; :ipcyear_id mean var
+
+(defun multicolumn (n string &optional (column "|c|"))
+  #?"\\multicolumn{${n}}{${column}}{${string}}")
+(defun pm (mean sd)
+  (format nil "$~3f\\pm~3f$" mean sd))
+
+(defun join-& (&rest args)
+  (format nil "~{~a~^&~}" args))
+
+(defun make-table (table)
+  (match table
+    ((array :dimensions (list a dt h q domain))
+     (iter outer
+           (for _a below a)
+           (collect
+               (iter (with d0 = 0)
+                     (for _d below domain)
+                     (for cell = (aref table 0 0 0 0 _d))
+                     (for pcell previous cell)
+                     (collect
+                         (match* (pcell cell)
+                           ((nil _)
+                            (%n (1+ _d) :domain))
+                           (((plist :ipcyear-id year)
+                             (plist :ipcyear-id (= year)))
+                            (%n (1+ _d) :domain))
+                           (((plist :ipcyear-id year) _)
+                            (prog1
+                              (princ-to-string (%n (1+ year) :ipcyear))
+                              (setf d0 _d))))))
+             into columns)
+           (in outer (collect (multicolumn (* dt h q) (%n (1+ _a) :algorithm)) into algos))
+     (iter (for _dt below dt)
+           (in outer (collect (multicolumn (* h q) (%n (1+ _dt) :default_tiebreaking)) into dts))
+     (iter (for _h below h)
+           (in outer (collect (multicolumn q (%n (1+ _h) :heuristics)) into hs))
+     (iter (for _q below q)
+           (in outer (collect (%n (1+ _q) :queue) into qs))
+           (in outer (collect
+                         (iter (with d0 = 0)
+                               (for _d below domain)
+                               (for cell = (aref table _a _dt _h _q _d))
+                               (for pcell previous cell)
+                               (collect
+                                   (match* (pcell cell)
+                                     ((nil 
+                                       (plist :mean mean :var var))
+                                      (pm mean var))
+                                     (((plist :ipcyear-id year)
+                                       (plist :ipcyear-id (= year) :mean mean :var var))
+                                      (pm mean var))
+                                     (_
+                                      (prog1
+                                        (format nil "~3f"
+                                         (iter (for __d from d0 below _d)
+                                               (summing (ematch cell
+                                                          ((plist :mean mean) mean)))))
+                                        (setf d0 _d))))))
+                       into columns)))))
+     (finally
+      (return-from outer
+        (format nil "~{~a~%~}"
+                (list* (apply #'join-& algos)
+                       (apply #'join-& dts)
+                       (apply #'join-& hs)
+                       (apply #'join-& qs)
+                       (apply #'mapcar #'join-& columns)))))))))
