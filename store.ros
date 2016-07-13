@@ -12,43 +12,25 @@ exec ros -Q -- $0 "$@"
 
 (defun parse-pathname (file)
   (ematch file
-    ;; FD-based 
     ((pathname :directory (last 3
-                                (split "-" "fig3" (read length) tag)
-                                (split* "-" (ipcyear ipcyear) _)
+                                tag
+                                (split* "-"
+                                        (ipcyear ipcyear)
+                                        _ _ heuristics algorithm default-tiebreaking queue _ date)
                                 domain)
-               :name      (split* "\\." (problem problem)
-                                  (ppcre "(..1)([el]p?)([0-9]*)" heuristics algorithm (read seed)) _))
-     (list* 'fig3 (initargs tag domain problem ipcyear heuristics algorithm length seed)))
-    ;; mp, probe
-    ((pathname :directory (last 3
-                                (split "-" "fig3" (read length) tag)
-                                (split* "-" (ipcyear ipcyear) _)
-                                domain)
-               :name      (split* "\\." (problem problem)
-                                  (ppcre "(mp|probe|tran)([0-9]*)" algorithm (read seed)) _))
-     (let ((heuristics algorithm))
-       (list* 'fig3 (initargs tag domain problem ipcyear heuristics algorithm length seed))))
-    ((pathname :directory (last 3
-                                (split "-" "fig2" tag)
-                                (split* "-" (ipcyear ipcyear) _)
-                                domain)
-               :name      (split* "\\." (problem problem)
-                                  (ppcre "(..1)([el]p?)" heuristics algorithm) _))
-     (list* 'fig2 (initargs tag domain problem ipcyear heuristics algorithm)))
-    ((pathname :directory (last 3
-                                (split "-" "fig2" tag)
-                                (split* "-" (ipcyear ipcyear) _)
-                                domain)
-               :name      (split* "\\." (problem problem)
-                                  (ppcre "(mp|probe|tran)" algorithm) _))
-     (let ((heuristics algorithm))
-       (list* 'fig2 (initargs tag domain problem ipcyear heuristics algorithm))))))
+               :name      (split* "\\." (problem problem) _)
+               :type      "out")
+     (list* 'experiment
+            :date (apply #'encode-universal-time
+                         (reverse (mapcar #'read-from-string date)))
+            (initargs tag
+                      domain problem ipcyear
+                      algorithm heuristics queue default-tiebreaking)))))
 
 (defun main (&rest files)
   (my-connect "db.sqlite")
   (set-pragma)
-  (mapcar #'ensure-table-exists '(tag domain algorithm heuristics fig2 fig3))
+  (mapcar #'ensure-table-exists '(tag domain algorithm heuristics default-tiebreaking queue experiment ipcyear))
   (setf *kernel* (make-kernel (read-from-string (uiop:run-program "grep processor /proc/cpuinfo | wc -l" :output :string))))
   (let ((t1 (get-internal-real-time)))
     (let ((results (remove nil (time (pmapcar (lambda (file)

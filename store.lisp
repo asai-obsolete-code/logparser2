@@ -175,7 +175,7 @@
               nil)))
 
 (defun parse (file pathname-parser)
-  (handler-case
+  ;; (handler-case
       (let ((parsed (make-pathname :type "parsed" :defaults file)))
         (when (or (not (probe-file parsed))
                   (< (file-write-date parsed) (file-write-date file)))
@@ -184,11 +184,13 @@
                    (apply #'ensure-dao (funcall pathname-parser file))
                    (parse-output file))
             (with-open-file (s parsed :if-does-not-exist :create)))))
-    (error (c)
-      (format *error-output* "Error while parsing file: ~a" file)
-      (pprint-logical-block (*error-output* nil)
-        (pprint-indent :block 2)
-        (describe c)))))
+    ;; (error (c)
+    ;;   (format *error-output* "Error while parsing file: ~a" file)
+    ;;   (pprint-logical-block (*error-output* nil)
+    ;;     (pprint-indent :block 2)
+    ;;     (signal c)))
+    ;; )
+)
 
 (defun parse-output (file)
   (let ((*local* (make-hash-table)))

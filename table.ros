@@ -1,0 +1,61 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+
+(load "common.lisp")
+(in-package :ros.script.plot)
+(cl-syntax:use-syntax :cl-interpol)
+(my-connect)
+(defun main (&rest args)
+  (declare (ignorable args))
+  (my-connect "db.sqlite")
+  (print (as-array (data))))
+
+(defun coverage ()
+  (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date
+           (:as (:count :*) :coverage))
+    (from :experiment)
+    (where (:> :plan_length 0))
+    (group-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date)))
+
+(defun samples-and-mean ()
+  (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id
+                         (:as (:count (:distinct :date)) :samples)
+                         (:as (:avg :coverage) :mean))
+    (from (coverage))
+    (group-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id)))
+
+(defun mean-and-variance ()
+  (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id
+                         :mean
+                         (:as (:/ (:sum (:* (:- :coverage :mean)
+                                            (:- :coverage :mean)))
+                                  (:- :samples 1))
+                              :var))
+    (from (coverage))
+    (left-join (:as (samples-and-mean) :sm)
+               :using
+               (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id))
+    (group-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id)
+    (order-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id)))
+
+(defun data ()
+  (retrieve-by-sql
+   (mean-and-variance)))
+
+(defun as-array (data content-dim)
+  (let* ((label-dim (- (/ (length (first data)) 2) content-dim))
+         (table (make-array (make-list label-dim :initial-element 0)
+                            :adjustable t)))
+    (iter (for datum in data)
+          (for dims = (iter (for d in (cdr datum) by #'cddr)
+                            (for i below label-dim)
+                            (collect d)))
+          (for maxdims = (mapcar #'max dims (array-dimensions table)))
+          (unless (equal maxdims (array-dimensions table))
+            (setf table (adjust-array table maxdims)))
+          (setf (apply #'aref table (mapcar #'1- dims))
+                (nthcdr (* 2 label-dim) datum)))
+    table))

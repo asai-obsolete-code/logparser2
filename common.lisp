@@ -45,7 +45,6 @@
 ;;               (mito.logger:with-sql-logging
 ;;                 (mito:create-dao 'tweet :user me)))
 
-
 (defclass db-symbol ()
   ((name :col-type :text :initarg :name))
   (:metaclass dao-table-class)
@@ -63,14 +62,41 @@
 (defclass heuristics (db-symbol) ()
   (:metaclass dao-table-class)
   (:record-timestamps nil))
+(defclass default-tiebreaking (db-symbol) ()
+  (:metaclass dao-table-class)
+  (:record-timestamps nil))
+(defclass queue (db-symbol) ()
+  (:metaclass dao-table-class)
+  (:record-timestamps nil))
+
+(defclass db-number-symbol ()
+     ((name :col-type :integer :initarg :name :initform -1))
+  (:metaclass dao-table-class)
+  (:record-timestamps nil)
+  (:unique-keys name))
+
+(defclass ipcyear (db-number-symbol) ()
+  (:metaclass dao-table-class)
+  (:record-timestamps nil))
+
+#+nil
+(reported-at :col-type :timestamp
+             :initarg :reported-at
+             :initform (local-time:now)
+             :accessor report-reported-at
+             :inflate #'local-time:universal-to-timestamp
+             :deflate #'local-time:timestamp-to-universal)
 
 (defclass experiment ()
   ((tag :col-type tag :initarg :tag) ;; arbitrary tag string
    (problem :col-type :integer :initarg :problem)
    (domain :col-type domain :initarg :domain)
-   (ipcyear :col-type :integer :initarg :ipcyear)
    (algorithm :col-type algorithm :initarg :algorithm)
    (heuristics :col-type heuristics :initarg :heuristics)
+   (default-tiebreaking :col-type default-tiebreaking :initarg :default-tiebreaking)
+   (queue :col-type queue :initarg :queue)
+   (date :col-type :timestamp :initarg :date)
+   (ipcyear :col-type ipcyear :initarg :ipcyear)
    ;;
    (search :col-type :float :initarg :search :initform -1)
    (wall :col-type :integer :initarg :wall :initform -1)
@@ -84,21 +110,9 @@
   (:metaclass dao-table-class)
   (:record-timestamps nil))
 
-
-(defclass macro (experiment)
-     ((macros :col-type :integer :initarg :macros :initform 0)
-      (macros2 :col-type :integer :initarg :macros2 :initform 0)
-      (usedmacros :col-type :integer :initarg :usedmacros :initform 0))
-  (:metaclass dao-table-class)
-  (:record-timestamps nil))
-
-(defclass fig2 (macro)
-     ()
-  (:metaclass dao-table-class)
-  (:record-timestamps nil))
-
-(defclass fig3 (macro)
-     ((length :col-type :integer :initarg :length)
-      (seed :col-type :integer :initarg :seed))
-  (:metaclass dao-table-class)
-  (:record-timestamps nil))
+(defmethod print-object ((o db-symbol) s)
+  (print-unreadable-object (o s :type t)
+    (princ (slot-value o 'name) s)))
+(defmethod print-object ((o db-number-symbol) s)
+  (print-unreadable-object (o s :type t)
+    (princ (slot-value o 'name) s)))

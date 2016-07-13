@@ -1,0 +1,57 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#| <Put a one-line description here>
+exec ros -Q -- $0 "$@"
+|#
+
+(load "common.lisp")
+(load "plot-common.lisp")
+(in-package :ros.script.plot)
+(cl-syntax:use-syntax :cl-interpol)
+
+(defun futures ()
+  (iter outer
+        (for measure in '(:evaluation :expansion :generation))
+        (iter (for config in
+                   (retrieve-by-sql
+                      (select (:algorithm_id :heuristics_id)
+                        (from :experiment)
+                        (group-by :algorithm_id :heuristics_id))))
+              (task measure config))))
+
+(defun task (measure config)
+  (match config
+    ((list _ alg _ h)
+     (iter
+       (for %q in (retrieve-by-sql
+                   (select (:a.id :a.name :b.id :b.name)
+                     (from (:as :queue :a) (:as :queue :b))
+                     (where (:< :a.id :b.id)))))
+       (match %q
+         ((list _ q1 _ qname1 _ q2 _ qname2)
+          (when-let ((data (retrieve-by-sql
+                            (select (list (make-keyword (symbolicate :a. measure))
+                                          (make-keyword (symbolicate :b. measure)))
+                              (from (:as :experiment :a) (:as :experiment :b))
+                              (where
+                               (:and (:= :a.problem :b.problem)
+                                     (:= :a.domain_id :b.domain_id)
+                                     (:= :a.heuristics_id h)
+                                     (:= :b.heuristics_id h)
+                                     (:= :a.algorithm_id alg)
+                                     (:= :b.algorithm_id alg)
+                                     (:= :a.queue_id q1)
+                                     (:= :b.queue_id q2)))))))
+            (match data
+              ((data both solved-x solved-y)
+               (with-plots (s)
+                 (setup #?"${(%n alg :algorithm)} ${(%n h :heuristics)} ${measure} ${qname1} vs ${qname2}"
+                        #?"${measure}/${(%n alg :algorithm)}-${(%n h :heuristics)}-${qname1}-${qname2}.svg")
+                 (plot "x" :title "y=x")
+                 (plot (lambda ()
+                         (iter (for (_2 x _3 y) in data)
+                               (format s "~&~a ~a" (correct x) (correct y))))
+                       :title (replace-newline #?"
+${(length data)} in total, solved by (both,${qname1},${qname2},none)=(${both},${solved-x},${solved-y},${(- (length data) both solved-x solved-y)})"))))))))))))
+
+
