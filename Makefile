@@ -1,7 +1,8 @@
 
 # $(info $(shell git pull))
 
-.PHONY: pull db ramdisk distclean clean addindex
+.PHONY: pull db ramdisk distclean clean addindex test
+
 all: store.bin
 
 pull:
@@ -32,4 +33,7 @@ benchmark: store.bin
 addindex:
 	-sqlite3 db.sqlite "create index _fig2 on fig2 (problem,domain_id,heuristics_id,algorithm_id,tag_id)"
 	-sqlite3 db.sqlite "create index _fig3 on fig3 (problem,domain_id,heuristics_id,algorithm_id,tag_id)"
+
+test:
+	./test.sh
 
