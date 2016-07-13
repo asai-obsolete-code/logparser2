@@ -111,6 +111,8 @@
 (defparser seed (line)
   (match line
     ((ppcre "\"--seed\" \"([0-9]*)\"" (read seed))
+     seed)
+    ((ppcre "--random-seed ([0-9]*)" (read seed))
      seed)))
 
 (defparser macros (line)
@@ -161,7 +163,7 @@
         (:constraint
          (values (or (bt:with-lock-held (*lock*)
                        (apply #'find-dao name args))
-                     (error "should not return nil!")) t))
+                     (error "should not return nil!: ~s ~s" name args)) t))
         (otherwise (error "unknown error!"))))))
 
 (defun ensure-dao/write (name &rest args)
