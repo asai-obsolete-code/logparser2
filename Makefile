@@ -48,3 +48,5 @@ addindex:
 test:
 	./test.sh
 
+copy:
+	scp wasabi:repos/gbfsparser/db.sqlite .
