@@ -4,3 +4,9 @@
 *~
 #*
 *.plot
+/table.aux
+/table.fdb_latexmk
+/table.fls
+/table.log
+/table.pdf
+/table.tex

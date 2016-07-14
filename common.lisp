@@ -13,7 +13,7 @@
 
 (defun my-connect (&optional (name "db.sqlite") (toplevel t))
   (declare (ignorable name))
-  (format t "~&connecting... [~a]" name)
+  (format *error-output* "~&connecting... [~a]" name)
   (if toplevel
       (connect-toplevel :sqlite3 :database-name name)
       (connect :sqlite3 :database-name name)))

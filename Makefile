@@ -50,3 +50,16 @@ test:
 
 copy:
 	scp wasabi:repos/gbfsparser/db.sqlite .
+
+table: table.pdf
+table.tex: table.ros common.lisp plot-common.lisp db.sqlite
+	./table.ros > table.tex
+upload     = ~/Dropbox/FukunagaLabShare/OngoingWorks/Asai/
+latexmk    = latexmk/latexmk.pl
+%.pdf: %.tex
+	$(latexmk) -pdf \
+		   -latexoption="-halt-on-error" \
+		   -bibtex \
+		   $<
+	mkdir -p $(upload)/$(notdir $(PWD))/
+	cp $@ $(upload)/$(notdir $(PWD))/$(shell hostname)-$*.pdf
