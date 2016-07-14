@@ -8,17 +8,38 @@ exec ros -Q -- $0 "$@"
 (load "plot-common.lisp")
 (in-package :ros.script.plot)
 (cl-syntax:use-syntax :cl-interpol)
-(my-connect)
+
 (defun main (&rest args)
   (declare (ignorable args))
   (my-connect "db.sqlite")
-  (print (as-array (data))))
+  (format t "
+\\documentclass[10pt,letterpaper]{article}
+\\usepackage{aaai}
+\\usepackage[paperwidth=100cm,paperheight=100cm]{geometry}
+\\usepackage{times}
+\\usepackage{helvet}
+\\usepackage{courier}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{xspace}
+\\usepackage{relsize}
+\\usepackage{graphicx}
+\\usepackage{multirow}
+\\usepackage[normalem]{ulem}
+\\usepackage{url}
+\\begin{document}
+\\nocopyright
+\\begin{figure*}[htbp]
+")
+  (princ (make-table (as-array (data) 3)))
+  (format t "
+\\end{figure*}
+\\end{document}"))
 
 (defun solved ()
-  (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date
+  (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date :problem
            (:as (:/ (:max :plan_length 0) :plan_length) :solved))
-    (from :experiment)
-    (group-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date)))
+    (from :experiment)))
 
 (defun coverage ()
   (select (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id :date
@@ -74,32 +95,33 @@ exec ros -Q -- $0 "$@"
   #?"\\multicolumn{${n}}{${column}}{${string}}")
 (defun pm (mean sd)
   (format nil "$~3f\\pm~3f$" mean sd))
-
+(defun tabular (n str)
+  (format nil "\\begin{tabular}{|*{~a}{c|}}
+~a
+\\end{tabular}" n str))
 (defun join-& (&rest args)
   (format nil "~{~a~^&~}" args))
 
 (defun make-table (table)
   (match table
-    ((array :dimensions (list a dt h q domain))
+    ((array :dimensions (list a dt h q d))
      (iter outer
            (for _a below a)
-           (collect
-               (iter (with d0 = 0)
-                     (for _d below domain)
-                     (for cell = (aref table 0 0 0 0 _d))
-                     (for pcell previous cell)
-                     (collect
-                         (match* (pcell cell)
-                           ((nil _)
-                            (%n (1+ _d) :domain))
-                           (((plist :ipcyear-id year)
-                             (plist :ipcyear-id (= year)))
-                            (%n (1+ _d) :domain))
-                           (((plist :ipcyear-id year) _)
-                            (prog1
-                              (princ-to-string (%n (1+ year) :ipcyear))
-                              (setf d0 _d))))))
-             into columns)
+           (when (first-time-p)
+             (collect
+              (iter (with d0 = 0)
+                    (for _d below d)
+                    (for cell = (aref table 0 0 0 0 _d))
+                    (for pcell previous cell)
+                    (match* (pcell cell)
+                            (((plist :ipcyear-id year)
+                              (plist :ipcyear-id (eq year))) ; because year could be nil
+                             (collect (%n (1+ _d) :domain)))
+                            ((_ (plist :ipcyear-id year))
+                             (collect (format nil "\\hline~%~a" (%n year :ipcyear)))
+                             (collect (format nil "\\hline~%~a" (%n (1+ _d) :domain)))
+                             (setf d0 _d))))
+              into columns))
            (in outer (collect (multicolumn (* dt h q) (%n (1+ _a) :algorithm)) into algos))
      (iter (for _dt below dt)
            (in outer (collect (multicolumn (* h q) (%n (1+ _dt) :default_tiebreaking)) into dts))
@@ -109,30 +131,31 @@ exec ros -Q -- $0 "$@"
            (in outer (collect (%n (1+ _q) :queue) into qs))
            (in outer (collect
                          (iter (with d0 = 0)
-                               (for _d below domain)
+                               (for _d below d)
                                (for cell = (aref table _a _dt _h _q _d))
                                (for pcell previous cell)
-                               (collect
-                                   (match* (pcell cell)
-                                     ((nil 
-                                       (plist :mean mean :var var))
-                                      (pm mean var))
-                                     (((plist :ipcyear-id year)
-                                       (plist :ipcyear-id (= year) :mean mean :var var))
-                                      (pm mean var))
-                                     (_
-                                      (prog1
-                                        (format nil "~3f"
-                                         (iter (for __d from d0 below _d)
-                                               (summing (ematch cell
-                                                          ((plist :mean mean) mean)))))
-                                        (setf d0 _d))))))
+                               (match* (pcell cell)
+                                       (((plist :ipcyear-id year)
+                                         (plist :ipcyear-id (eq year) :mean mean :var var))
+                                        (collect (pm mean var)))
+                                       ((_
+                                         (plist :ipcyear-id year :mean mean :var var))
+                                        (collect
+                                         (format nil "~3f"
+                                                 (iter (for __d from _d below d)
+                                                       (ematch (aref table _a _dt _h _q __d)
+                                                         ((plist :ipcyear-id _year :mean mean)
+                                                          (while (= year _year))
+                                                          (summing mean))))))
+                                        (collect (pm mean var))
+                                        (setf d0 _d))))
                        into columns)))))
      (finally
       (return-from outer
-        (format nil "~{~a~%~}"
-                (list* (apply #'join-& algos)
-                       (apply #'join-& dts)
-                       (apply #'join-& hs)
-                       (apply #'join-& qs)
-                       (apply #'mapcar #'join-& columns)))))))))
+        (tabular (1+ (* a dt h q))      ; 1+ column header
+                 (format nil "~{~a\\\\~^\\hline~%~}~%~{~a\\\\~%~}\\hline"
+                         (list (apply #'join-& "Algorithm" algos)
+                               (apply #'join-& "\\textit{default}" dts)
+                               (apply #'join-& "$h$" hs)
+                               (apply #'join-& "Tiebreak" qs))
+                         (apply #'mapcar #'join-& columns)))))))))
