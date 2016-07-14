@@ -94,7 +94,10 @@ exec ros -Q -- $0 "$@"
 (defun multicolumn (n string &optional (column "|c|"))
   #?"\\multicolumn{${n}}{${column}}{${string}}")
 (defun pm (mean sd)
-  (format nil "$~3f\\pm~3f$" mean sd))
+  (declare (ignorable mean sd))
+  (format nil "~3f" mean)
+  ;; (format nil "$~3f\\pm~3f$" mean sd)
+  )
 (defun tabular (n str)
   (format nil "\\begin{tabular}{|*{~a}{c|}}
 ~a
