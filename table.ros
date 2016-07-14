@@ -9,6 +9,8 @@ exec ros -Q -- $0 "$@"
 (in-package :ros.script.plot)
 (cl-syntax:use-syntax :cl-interpol)
 
+(defvar *constraint*)
+
 (defun main (&rest args)
   (declare (ignorable args))
   (my-connect "db.sqlite")
@@ -66,10 +68,11 @@ exec ros -Q -- $0 "$@"
     (left-join (:as (samples-and-mean) :sm)
                :using
                (:algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id))
+    (where *constraint*)
     (group-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id)
     (order-by :algorithm_id :default_tiebreaking_id :heuristics_id :queue_id :ipcyear_id :domain_id)))
 
-(defun data ()
+(defun data (&optional (*constraint* 1)) ;; true
   (retrieve-by-sql
    (mean-and-variance)))
 
